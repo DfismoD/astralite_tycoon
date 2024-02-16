@@ -16,7 +16,7 @@
 
 body{
   background-color:  #f5f5f5;
-  background: url("/public/background.png");
+  background: url("/background.png");
   background-repeat: no-repeat;
   background-size: cover;
 }
@@ -140,6 +140,34 @@ button.affordable {
 
 .bottom_menu .nav_item a img, .top_menu .nav_item a img, .bottom_menu .nav_item button img{
   max-width: 75px;
+}
+
+.current_bagpack{
+  position: absolute;
+  background-color: #212F3D;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 25% 5px 5px 5px;
+  font-size: 0.6em;
+  color: #fff;
+}
+
+.current_bagpack img{
+  max-width: 50px;
+}
+
+.sell{
+  position: absolute;
+  border-radius: 10px;
+  margin: 50% 10px 10px 5px;
+}
+
+.sell button{
+  background-color: #35b850;
+  color: #fff;
+  border: none;
+  outline: none;
+  padding: 10px;
 }
 
 /* .background{

@@ -4,11 +4,17 @@
     import { onMount } from "svelte";
     import Swal from "sweetalert2";
 
-    let itemList = [];
+    let money;
+    let tools = [];
+    let bagpacks = [];
+    let minerals = [];
+    let somme;
     let crystals;
     let gems;
     let clickPower;
     let crystalsPerSecond;
+
+    const money_sound = new Audio('money_sound.mp3');
 
     function saveData() {
     const dataToSave = {
@@ -16,12 +22,16 @@
       gems,
       clickPower,
       crystalsPerSecond,
-      itemList
+      tools,
+      bagpacks,
+      minerals,
+      somme,
+      money
     };
 
     // Convertissez les données en JSON et enregistrez-les dans le stockage local
     localStorage.setItem('astralite_tycoon_data', JSON.stringify(dataToSave));
-  }
+    }
 
     function loadData() {
         const savedData = localStorage.getItem('astralite_tycoon_data');
@@ -34,7 +44,11 @@
             gems = parsedData.gems;
             clickPower = parsedData.clickPower;
             crystalsPerSecond = parsedData.crystalsPerSecond;
-            itemList = parsedData.itemList;
+            tools = parsedData.tools;
+            bagpacks = parsedData.bagpacks;
+            minerals = parsedData.minerals;
+            somme = parsedData.somme;
+            money = parsedData.money;
         }
     }
 
@@ -58,9 +72,10 @@
     }
 
     function buyMiningTool(tool) {
-        if (crystals >= tool.cost) {
-            crystals -= tool.cost;
-            itemList.forEach((otherTool) => {
+        if (money >= tool.cost) {
+            money -= tool.cost;
+            money_sound.play();
+            tools.forEach((otherTool) => {
                 if (otherTool !== tool) {
                     otherTool.equip = false;
                 }
@@ -68,30 +83,31 @@
             tool.buy = true;
             tool.equip = true;
             saveData();
-            itemList = [...itemList]
+            tools = [...tools]
         } else {
-            showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour cet objet!');
+            showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour cet outils!');
         }
     }
 
     function equip_tool(tool){
-        itemList.forEach((otherTool) => {
+        tools.forEach((otherTool) => {
             if (otherTool !== tool) {
                 otherTool.equip = false;
             }
         });
+        money_sound.play();
         tool.equip = true;
         saveData();
-        itemList = [...itemList]
+        tools = [...tools]
     }
 </script>
 
 <main>
     <div class="nav_container">
         <nav class="top_menu">
-            <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(crystals)}</div>
+            <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
             <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems}</div>
-            {#each itemList as item}
+            {#each tools as item}
                 {#if (item.equip)}
                     <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
                 {/if}                
@@ -104,10 +120,10 @@
         <div class="market">
             <button class="close_button" on:click={() => close_button()} style="margin: 0px; padding: 10px;">x</button>
             <h2><img class="" src="pioche.png" alt="pioche">Outils</h2>
-                {#each itemList as tool (tool.name)}
+                {#each tools as tool (tool.name)}
                 <button
                     class="item"
-                    class:affordable={crystals >= tool.cost}
+                    class:affordable={money >= tool.cost}
                 >
                     <div class="left_content">
                         <img src={`./${tool.image}`} alt={tool.name}>
