@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import Swal from 'sweetalert2';
 
   import { Link, navigate } from 'svelte-routing';
@@ -21,6 +21,13 @@
   let rockX = 0;
   let rockY = 0;
   let rockVisible = false;
+  let display;
+
+  let update = false;
+
+  let spaw_rate;
+
+  let rocks = [];
 
   function saveData() {
     const dataToSave = {
@@ -92,24 +99,44 @@ function loadData() {
   }
 
   function showRock() {
-    rockX = Math.random() * window.innerWidth;
-    rockY = Math.random() * window.innerHeight;
-    rockVisible = true;
+    const newRock = {
+      X: window.innerWidth / 10 + Math.random() * (window.innerWidth / 1.4),
+      Y: window.innerHeight / 1.7 + Math.random() * (window.innerHeight / 4.8),
+      visible: true
+    };
 
-    // Set a timeout to hide the rock after a few seconds (e.g., 3 seconds)
-    setTimeout(() => {
-      hideRock();
-    }, 3000);
+    if (rocks.length < 10){
+      rocks = [...rocks, newRock];
+    } else {
+      rocks.shift();
+      rocks = [...rocks, newRock];
+    }
+
+    itemList.forEach(item => {
+      if (item.equip){
+        spaw_rate = 1000 / item.am;
+        console.log("spawn rate : " + spaw_rate);
+      }
+    });
+
+    setTimeout(() =>{
+      showRock();
+    },spaw_rate)
   }
 
-  function hideRock() {
-    rockVisible = false;
+  function hideRock(rock) {
+    rock.visible = false;
+    rocks = [...rocks];
   }
 
-  function mineRock() {
-    if (rockVisible) {
-      crystals += 1;
-      hideRock();
+  function mineRock(rock) {
+    if (rock.visible) {
+      itemList.forEach(item => {
+        if (item.equip){
+          crystals = crystals + 1 * item.mr;
+        }
+      });
+      hideRock(rock);
       saveData();
     }
   }
@@ -119,20 +146,26 @@ function loadData() {
 <main>
   <div class="nav_container">
     <nav class="top_menu">
-        <div class="nav_item counter"><img src="dollar.png" alt="money">{crystals}</div>
+        <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(crystals)}</div>
         <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems}</div>
-        <div class="nav_item"><a href="/Shop"><img src="dustpan.png" alt="curent_tool"></a></div>
+        {#each itemList as item}
+          {#if (item.equip)}
+              <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
+          {/if}                
+      {/each}
         <div class="nav_item real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
     </nav>
   </div>
 
-  <img class="background" src="/background.png" alt="background">
-  <button
-    style="position: absolute; left: {rockX}px; top: {rockY}px;"
-    on:click={mineRock}
-  >
-    <img src="rock.png" alt="rock" >
-  </button>
+
+  {#each rocks as rock}
+    {#if rock.visible}
+      <button on:click={() => mineRock(rock)} class="rock_button">
+        <img src="/rock.png" alt="rock" style="position: absolute; left: {rock.X}px; top: {rock.Y}px; max-width: 30px;">
+      </button>
+    {/if}
+  {/each}
+
 
   <div class="nav_container">
     <div class="bottom_menu">

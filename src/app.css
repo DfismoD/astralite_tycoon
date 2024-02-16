@@ -16,6 +16,9 @@
 
 body{
   background-color:  #f5f5f5;
+  background: url("/public/background.png");
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 main {
@@ -103,8 +106,9 @@ button.affordable {
   display: flex;
   justify-content: space-evenly;
   width: 100%;
-  border-top: 2px solid #333;
+  border-top: 2px solid #fff;
   align-items: center;
+  background-color: #212F3D;
 }
 
 .bottom_menu .nav_item{
@@ -112,8 +116,8 @@ button.affordable {
 }
 
 .bottom_menu .center{
-  border-left: 2px solid #333;
-  border-right: 2px solid #333;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #fff;
 }
 
 .top_menu .counter img{
@@ -138,14 +142,14 @@ button.affordable {
   max-width: 75px;
 }
 
-.background{
+/* .background{
   position: absolute;
   justify-content: center;
   text-align: center;
   height: 100vh;
   transform: translate(-50%);
   z-index: -1000;
-}
+} */
 
 
 /* Shop */
@@ -159,6 +163,8 @@ button.affordable {
   display: flex;
   justify-content: center;
   align-items: center;
+  background-color: #f5f5f5;
+  z-index: -1;
 }
 
 .market {
@@ -197,7 +203,7 @@ button.item {
   padding: 10px;
   border: 2px solid transparent;
   border-radius: 10px;
-  background-color: rgba(100, 100, 100, 1);
+  background-color: #212F3D;
   color: #fff;
   display: flex;
 }
@@ -251,4 +257,11 @@ button.item {
   border: none;
   outline: none;
   text-align: center;
+}
+
+.rock_button{
+  background-color: transparent;
+  border: none;
+  outline: none;
+  width: 0;
 }

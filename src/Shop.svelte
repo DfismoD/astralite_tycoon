@@ -68,6 +68,7 @@
             tool.buy = true;
             tool.equip = true;
             saveData();
+            itemList = [...itemList]
         } else {
             showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour cet objet!');
         }
@@ -80,22 +81,28 @@
             }
         });
         tool.equip = true;
+        saveData();
+        itemList = [...itemList]
     }
 </script>
 
 <main>
     <div class="nav_container">
         <nav class="top_menu">
-            <div class="nav_item counter"><img src="dollar.png" alt="money">{crystals}</div>
+            <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(crystals)}</div>
             <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems}</div>
-            <div class="nav_item"><a href="shop.svelte"><img src="dustpan.png" alt="curent_tool"></a></div>
+            {#each itemList as item}
+                {#if (item.equip)}
+                    <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
+                {/if}                
+            {/each}
             <div class="nav_item real_shop"><a href="real_shop.svelte"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
         </nav>
       </div>
 
       <div class="overlay">
         <div class="market">
-            <button class="close_button" on:click={() => close_button()}>x</button>
+            <button class="close_button" on:click={() => close_button()} style="margin: 0px; padding: 10px;">x</button>
             <h2><img class="" src="pioche.png" alt="pioche">Outils</h2>
                 {#each itemList as tool (tool.name)}
                 <button
@@ -116,21 +123,14 @@
                                 <p>-Minerai ramassés:  x{tool.mr}</p>
                             </div>
                             <div class="right">
-                                {#if (tool.equip)}
-                                    <p class="equip">Equipé</p>
-                                {/if}
-                                {#if (!tool.equip)}
-                                    <button
-                                        class="price"
-                                        on:click={() => buyMiningTool(tool)}
-                                        class:bought={tool.buy}
-                                    >
-                                        {#if (tool.buy)}
-                                            <button class="price" on:click={() => equip_tool(tool)}>Equiper</button>
-                                        {:else}
-                                            <button class="price" on:click={() => buyMiningTool(tool)}>{tool.cost}$</button>
-                                        {/if}
-                                    </button>
+                                {#if (tool.buy)}
+                                    {#if (tool.equip)}
+                                        <p class="equip">Equipé</p>
+                                    {:else}
+                                        <button class="price" on:click={() => equip_tool(tool)}>Equiper</button>
+                                    {/if}
+                                {:else}
+                                    <button class="price" on:click={() => buyMiningTool(tool)}>{tool.cost}$</button>
                                 {/if}
                             </div>
                         </div>
