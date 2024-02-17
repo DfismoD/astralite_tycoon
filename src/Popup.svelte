@@ -1,12 +1,18 @@
 <script>  
     export let show;
+
+    const pop_sound = new Audio('pop_sound.mp3');
   
     function redirigerPage(page) {
+      pop_sound.play();
+      setTimeout(() => {
         window.location.href = page;
+      }, 50);
     }
 
     function closePopup(){
-        show = false;
+      pop_sound.play();
+      show = false;
     }
   </script>
   

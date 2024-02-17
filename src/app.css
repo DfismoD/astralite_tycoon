@@ -147,7 +147,7 @@ button.affordable {
   background-color: #212F3D;
   border-radius: 10px;
   padding: 10px;
-  margin: 25% 5px 5px 5px;
+  margin: 30% 5px 5px 5px;
   font-size: 0.6em;
   color: #fff;
 }
@@ -159,7 +159,7 @@ button.affordable {
 .sell{
   position: absolute;
   border-radius: 10px;
-  margin: 50% 10px 10px 5px;
+  margin: 55% 10px 10px 5px;
 }
 
 .sell button{

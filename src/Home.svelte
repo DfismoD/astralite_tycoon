@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import Swal from 'sweetalert2';
 
   import { Link, navigate } from 'svelte-routing';
@@ -11,7 +11,7 @@
 
   let showPopup = false;
 
-  let money = 10000;
+  let money = 100000;
   let crystals = 0;
   let gems = 10;
   let clickPower = 1;
@@ -21,8 +21,20 @@
   let spaw_rate;
   let rocks = [];
   let worker_popup_show = 'display: none;';
+  let settings_popup_show = 'display : none;';
+  let sound = true;
+
+  let equipment_price = 30;
+  let equipment_level = 0;
+  let tired_price = 50;
+  let tired_level = 0;
+  let equipment_rock = 0;
+  let tired_money = 0;
 
   const rock_collect_sound = new Audio('rock_collect.mp3');
+  const sell_sound = new Audio('sell_sound.mp3');
+  const error = new Audio('error.mp3');
+  const pop_sound = new Audio('pop_sound.mp3');
 
   function saveData() {
     const dataToSave = {
@@ -34,7 +46,13 @@
       bagpacks,
       minerals,
       somme,
-      money
+      money,
+      equipment_price,
+      equipment_level,
+      tired_price,
+      tired_level,
+      equipment_rock,
+      tired_money
     };
 
     // Convertissez les données en JSON et enregistrez-les dans le stockage local
@@ -58,13 +76,21 @@ function loadData() {
     minerals = parsedData.minerals;
     somme = parsedData.somme;
     money = parsedData.money;
+    equipment_price = parsedData.equipment_price;
+    equipment_level = parsedData.equipment_level;
+    tired_price = parsedData.tired_price;
+    tired_level = parsedData.tired_level;
+    equipment_rock = parsedData.equipment_rock;
+    tired_money = parsedData.tired_money;
   }
 }
 
   // Appelez loadData dans onMount
   onMount(() => {
-    showRock();
     loadData();
+    showRock();
+    equipment_bonus();
+    tired_bonus();
   });
 
 
@@ -106,6 +132,7 @@ function loadData() {
   let crystals_error = "Fonds insuffisants pour acheter cet outil de minage !";
 
   function afficherPopup() {
+    pop();
     saveData();
     showPopup = true;
   }
@@ -119,10 +146,12 @@ function loadData() {
   }
 
   function worker_open_popup(){
+    pop();
     worker_popup_show = 'display: block;';
   }
 
   function worker_close_popup(){
+    pop();
     worker_popup_show = 'display: none;';
   }
 
@@ -133,6 +162,7 @@ function loadData() {
       text: message,
       confirmButtonColor: '#35b850',
     });
+    error.play();
   }
 
   function showRock() {
@@ -152,7 +182,6 @@ function loadData() {
     tools.forEach(item => {
       if (item.equip){
         spaw_rate = 1000 / item.am;
-        console.log("spawn rate : " + spaw_rate);
       }
     });
 
@@ -200,6 +229,10 @@ function loadData() {
   }
 
   function sell(){
+    if (somme != 0){
+      sell_sound.play();
+      sell_sound.volume = 0.5;
+    }
     minerals.forEach(mineral => {
       money += mineral.price * mineral.quantity;
       somme -= mineral.quantity;
@@ -209,24 +242,92 @@ function loadData() {
   }
 
   function buyEquipment(equipment) {
-    if (money >= equipment.price) {
-        money -= equipment.price;
-        equipment.current = true;
+    if (money >= equipment_price) {
+        money -= equipment_price;
+        equipment_level ++;
+        if (equipment_level < 10) {
+          equipment_price = equipment_price * 1.2;
+          equipment_rock ++;
+        }
+        if (equipment_level < 20 && equipment_level > 9) {
+          equipment_price = equipment_price * 1.25;
+          equipment_rock += 2;
+        }
         saveData();
-        equipments = [...equipment]
     } else {
-        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour cet outils!');
+        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour améliorer son équipement!');
     }
   }
 
   function buyTired(tired) {
-    if (money >= tired.price) {
-        money -= tired.price;
-        tired.current = true;
+    if (money >= tired_price) {
+        money -= tired_price;
+        tired_price = tired_price * 1.2;
+        tired_level ++;
+        tired_money += 5;
         saveData();
-        tireds = [...tired]
     } else {
-        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour cet outils!');
+        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour améliorer l\'assurance!');
+    }
+  }
+
+  function equipment_bonus() {
+    bagpacks.forEach(bagpack => {
+      if (bagpack.equip){
+        if (somme + equipment_rock <= bagpack.capacity) {
+          minerals[0].quantity += equipment_rock;
+          minerals.forEach(mineral => {
+            reset_somme = reset_somme + mineral.quantity;
+          });
+          somme = reset_somme;
+          reset_somme = 0;
+        }
+        if (somme + equipment_rock > bagpack.capacity) {
+          minerals[0].quantity += (bagpack.capacity - somme);
+          minerals.forEach(mineral => {
+            reset_somme = reset_somme + mineral.quantity;
+          });
+          somme = reset_somme;
+          reset_somme = 0;
+        }
+      }
+    });
+    // minerals = [...minerals];
+    setTimeout(() =>{
+      equipment_bonus();
+    },3000);
+  }
+
+  function tired_bonus() {
+    
+    money += tired_money;
+
+    setTimeout(() =>{
+      tired_bonus();
+    },3000);
+  }
+
+  function pop() {
+    if (sound){
+      pop_sound.play();
+    }
+  }
+
+  function settings_open_popup(){
+    pop();
+    settings_popup_show = 'display: block;';
+  }
+
+  function settings_close_popup(){
+    pop();
+    settings_popup_show = 'display: none;';
+  }
+
+  function sound_settings(){
+    if (sound){
+      sound = false;
+    } else {
+      sound = true;
     }
   }
 
@@ -259,6 +360,10 @@ function loadData() {
     <button on:click={sell}>Vendre</button>
   </div>
 
+  <div class="settings">
+    <button on:click={settings_open_popup}><img src="settings.png" alt="settings"></button>
+  </div>
+
 
   {#each rocks as rock}
     {#if rock.visible}
@@ -286,19 +391,15 @@ function loadData() {
       <div class="equipment">
         <div class="worker_left">
           <img src="worker_risk.png" alt="worker"><br>
-          {#each equipments as equipment}
-            {#if (equipment.current)}
-              <p>Niv{equipment.level}:{equipment.gain}/s</p>
-            {/if}
-          {/each}
+          <p>{equipment_level}</p>
         </div>
         <div class="worker_right">
           <h5>Equipement de l'ouvrier</h5>
           <p>Investissez dans l’équipement de votre ouvrier afin qu’il vous rapporte plus de minerais par seconde</p>
           {#each equipments as equipment}
-            {#if (!equipment.current)}
+            {#if (equipment.current)}
             <button class="level_price" on:click={() => buyEquipment(equipment)}>
-              Niveau suivant ( {equipment.gain}/s ) : {equipment.price}$
+              Améliorer: {Math.trunc(equipment_price)}$
             </button>
             {/if}
           {/each}
@@ -307,24 +408,29 @@ function loadData() {
       <div class="tired">
         <div class="worker_left">
           <img src="worker_old.png" alt="worker"><br>
-          {#each tireds as tired}
-            {#if (tired.current)}
-              <p>Niv{tired.level}:{tired.gain}/s</p>
-            {/if}
-          {/each}
+          <p>{tired_level}</p>
         </div>
         <div class="worker_right">
           <h5>Fatigue de l'ouvrier</h5>
           <p>Améliorez l’assurance santé de votre ouvrier, plus celle-ci est importante, plus votre ouvrier la paiera cher</p>
           {#each tireds as tired}
-            {#if (!tired.current)}
+            {#if (tired.current)}
             <button class="level_price" on:click={() => buyTired(tired)}>
-              Niveau suivant ( {tired.gain}/s ) : {tired.price}$
+              Améliorer: {Math.trunc(tired_price)}$
             </button>
             {/if}
           {/each}
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="settings_overlay" style={settings_popup_show}>
+    <div class="settings_popup">
+      <button class="close" on:click={settings_close_popup}>x</button>
+      <h3><img src="settings.png" alt="settings">Options</h3><br><br>
+      <p>Musique <label class="switch"><input type="checkbox"><span></span></label></p><br>
+      <p>Son <label class="switch"><input type="checkbox"><span></span></label></p>
     </div>
   </div>
 
@@ -360,9 +466,9 @@ function loadData() {
   }
 
   h3 img{
-      max-width: 40px;
-      margin: 0 10px 0 0;
-      transform: translate(0, 50%);
+    max-width: 40px;
+    margin: 0 10px 0 0;
+    transform: translate(0, 50%);
   }
 
   .equipment, .tired{
@@ -370,18 +476,22 @@ function loadData() {
     margin: auto;
   }
 
-  .equipment .worker_left img, .tired .worker_left img{
+  .equipment .worker_left, .tired .worker_left{
     position: absolute;
-    max-width: 50px;
     left: 0;
-    margin: 5% 0 0 10px;
+    margin: 2.5% 0 0 10px;
+  }
+
+  .equipment .worker_left img, .tired .worker_left img{
+    max-width: 50px;
   }
 
   .equipment .worker_left p, .tired .worker_left p{
-    position: absolute;
-    left: 0;
-    margin: 15% 0 0 3px;
-    transform: translate(0, -50%);
+    background-color: #212F3D;
+    color: #fff;
+    padding: 7px;
+    border-radius: 8px;
+    z-index: 1000;
   }
 
   .equipment .worker_right, .tired .worker_right{
@@ -410,5 +520,111 @@ function loadData() {
     border: none;
     outline: none;
     padding: 10px;
+  }
+
+  /* Settings */
+
+  .settings{
+    position: absolute;
+    right: 0;
+    margin: 30% 5px 0 0;
+  }
+
+  .settings button{
+    border: none;
+    outline: none;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 10px 10px 5px 10px;
+  }
+
+  .settings img{
+    max-width: 25px;
+  }
+
+  .settings_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .settings_popup {
+    background: white;
+    color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 100% 10px 0 10px;
+    transform: translate(0, -50%);
+  }
+
+  .settings_popup button{
+    position: absolute;
+    margin: 20px 0 0 0;
+    background-color: transparent;
+    border-radius: 8px;
+    border: none;
+    padding: 10px;
+    right: 0;
+    margin: -10px 10px 0 0;
+  }
+
+  .settings_popup img{
+      max-width: 20px;
+      margin: 0 10px 0 0;
+      transform: translate(0, 20%);
+  }
+
+  .switch {
+    display: inline-block;
+    position: relative;
+    width: 50px;
+    height: 20px;
+    cursor: pointer;
+    overflow: hidden;
+    transform: translate(0, 5px);
+  }
+  .switch input {
+    position: absolute;
+    top: -30px;
+    top: -30px;
+    width: 0;
+    height: 0;
+    outline: none;
+  }
+  .switch input + span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #99b4df;
+    border-radius: 20px;
+  }
+  .switch input + span:before {
+    content: "";
+    display: inline-block;
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    width: 15px;
+    height: 15px;
+    background: white;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    transition: all .5s;
+  }
+  .switch input:checked + span {
+    background: #35b850;
+  }
+  .switch input:checked + span:before {
+    left: 32px;
   }
 </style>

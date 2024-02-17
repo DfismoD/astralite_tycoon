@@ -14,7 +14,16 @@
     let clickPower;
     let crystalsPerSecond;
 
+    let equipment_price;
+    let equipment_level;
+    let tired_price;
+    let tired_level;
+    let equipment_rock;
+    let tired_money;
+
     const money_sound = new Audio('money_sound.mp3');
+    const error = new Audio('error.mp3');
+    const pop_sound = new Audio('pop_sound.mp3');
 
     function saveData() {
     const dataToSave = {
@@ -26,7 +35,13 @@
       bagpacks,
       minerals,
       somme,
-      money
+      money,
+      equipment_price,
+      equipment_level,
+      tired_price,
+      tired_level,
+      equipment_rock,
+      tired_money
     };
 
     // Convertissez les données en JSON et enregistrez-les dans le stockage local
@@ -49,6 +64,12 @@
             minerals = parsedData.minerals;
             somme = parsedData.somme;
             money = parsedData.money;
+            equipment_price = parsedData.equipment_price;
+            equipment_level = parsedData.equipment_level;
+            tired_price = parsedData.tired_price;
+            tired_level = parsedData.tired_level;
+            equipment_rock = parsedData.equipment_rock;
+            tired_money = parsedData.tired_money;
         }
     }
 
@@ -58,8 +79,11 @@
     
 
     function close_button(){
+        pop_sound.play();
         saveData();
-        window.location.href = '/';
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 50);
     }
 
     function showError(title, message){
@@ -69,6 +93,7 @@
         text: message,
         confirmButtonColor: '#35b850',
         });
+        error.play();
     }
 
     function buyMiningTool(tool) {
