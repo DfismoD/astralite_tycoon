@@ -15,6 +15,7 @@
   },
   "author": "Astralite Corp",
   "dependencies": {
+    "@capacitor-community/admob": "^5.3.1",
     "@capacitor/android": "^5.7.0",
     "howler": "^2.2.4",
     "svelte-routing": "^2.12.0",

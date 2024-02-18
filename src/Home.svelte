@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import Swal from 'sweetalert2';
 
@@ -8,6 +8,69 @@
   import Real_shop from './Real_shop.svelte';
 
   import Popup from './Popup.svelte';
+
+  import { AdMob, AdmobConsentStatus, AdmobConsentDebugGeography, type RewardAdOptions, type AdLoadInfo, RewardAdPluginEvents, type AdMobRewardItem } from '@capacitor-community/admob';
+
+  async function showConsent() {
+    const consentInfo = await AdMob.requestConsentInfo();
+
+    if (consentInfo.isConsentFormAvailable && consentInfo.status === AdmobConsentStatus.REQUIRED) {
+      const { status } = await AdMob.showConsentForm();
+    }
+  }
+
+  async function rewardVideo(): Promise<void> {
+    console.log('Début de la fonction rewardVideo');
+    AdMob.addListener(RewardAdPluginEvents.Loaded, (info: AdLoadInfo) => {
+      // Subscribe prepared rewardVideo
+      console.log('Publicité chargée avec succès', info);
+    });
+
+    AdMob.addListener(RewardAdPluginEvents.Rewarded, (rewardItem: AdMobRewardItem) => {
+      // Subscribe user rewarded
+      console.log(rewardItem);
+      console.log('Utilisateur récompensé', rewardItem);
+    });
+
+    const options: RewardAdOptions = {
+      adId: 'ca-app-pub-3917461892557500/7126849771',
+      isTesting: true,
+      // npa: true
+      // ssv: {
+      //   userId: "A user ID to send to your SSV"
+      //   customData: JSON.stringify({ ...MyCustomData })
+      //}
+    };
+    console.log('Avant AdMob.prepareRewardVideoAd');
+    await AdMob.prepareRewardVideoAd(options);
+    console.log('Après AdMob.prepareRewardVideoAd');
+
+    console.log('Avant AdMob.showRewardVideoAd');
+    const rewardItem = await AdMob.showRewardVideoAd();
+    console.log('Après AdMob.showRewardVideoAd', rewardItem);
+  }
+
+  export async function initialize(): Promise<void> {
+    await AdMob.initialize();
+
+    const [trackingInfo, consentInfo] = await Promise.all([
+      AdMob.trackingAuthorizationStatus(),
+      AdMob.requestConsentInfo(),
+    ]);
+
+    if (trackingInfo.status === 'notDetermined') {
+      await AdMob.requestTrackingAuthorization();
+    }
+
+    const authorizationStatus = await AdMob.trackingAuthorizationStatus();
+    if (
+      authorizationStatus.status === 'authorized' &&
+      consentInfo.isConsentFormAvailable &&
+      consentInfo.status === AdmobConsentStatus.REQUIRED
+    ) {
+      await AdMob.showConsentForm();
+    }
+  }
 
   let showPopup = false;
 
@@ -92,6 +155,11 @@ function loadData() {
     equipment_bonus();
     tired_bonus();
   });
+
+  onMount(async () => {
+    await initialize();
+    await rewardVideo();
+  })
 
 
   let minerals = [
