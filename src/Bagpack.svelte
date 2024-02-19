@@ -23,6 +23,7 @@
 
     const error = new Audio('error.mp3');
     const pop_sound = new Audio('pop_sound.mp3');
+    const money_sound = new Audio('money_sound.mp3');
 
     function saveData() {
     const dataToSave = {
@@ -105,6 +106,7 @@
             });
             bagpack.buy = true;
             bagpack.equip = true;
+            money_sound.play();
             saveData();
             bagpacks = [...bagpacks];
         } else {
@@ -119,6 +121,7 @@
             }
         });
         bagpack.equip = true;
+        money_sound.play();
         saveData();
         bagpacks = [...bagpacks];
     }
@@ -128,15 +131,16 @@
     <div class="nav_container">
         <nav class="top_menu">
             <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
-            <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems}</div>
+            <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems} +</div>
+            <div class="multiplier"><p>x</p></div>
             {#each bagpacks as item}
                 {#if (item.equip)}
                     <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_bagback"></a></div>
                 {/if}                
             {/each}
-            <div class="nav_item real_shop"><a href="real_shop.svelte"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
+            <div class="nav_item real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
         </nav>
-      </div>
+    </div>
 
       <div class="overlay">
         <div class="market">

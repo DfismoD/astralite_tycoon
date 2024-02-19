@@ -129,17 +129,18 @@
 
 <main>
     <div class="nav_container">
-        <nav class="top_menu">
-            <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
-            <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems}</div>
-            {#each tools as item}
-                {#if (item.equip)}
-                    <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
-                {/if}                
-            {/each}
-            <div class="nav_item real_shop"><a href="real_shop.svelte"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
-        </nav>
-      </div>
+    <nav class="top_menu">
+        <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
+        <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems} +</div>
+        <div class="multiplier"><p>x</p></div>
+        {#each tools as item}
+            {#if (item.equip)}
+                <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
+            {/if}                
+        {/each}
+        <div class="nav_item real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
+    </nav>
+    </div>
 
       <div class="overlay">
         <div class="market">

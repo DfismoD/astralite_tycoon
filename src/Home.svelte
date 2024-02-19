@@ -85,6 +85,7 @@
   let rocks = [];
   let worker_popup_show = 'display: none;';
   let settings_popup_show = 'display : none;';
+  let quest_popup_show = 'display: none;';
   let sound = true;
 
   let equipment_price = 30;
@@ -399,39 +400,49 @@ function loadData() {
     }
   }
 
+  function testpub(){
+    initialize();
+    rewardVideo();
+  }
+
+  function quest_open_popup(){
+    pop();
+    quest_popup_show = 'display: block;';
+  }
+
+  function quest_close_popup(){
+    pop();
+    quest_popup_show = 'display: none;';
+  }
+
 </script>
   
 <main>
   <div class="nav_container">
     <nav class="top_menu">
-        <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
-        <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems}</div>
-        {#each tools as item}
+      <div class="settings">
+        <button on:click={settings_open_popup}><img src="settings.png" alt="settings"></button>
+      </div>
+      <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
+      <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems} +</div>
+      <div class="multiplier"><p>x</p></div>
+      <div class="quest"><button on:click={quest_open_popup}><img src="quest_alert.png" alt="quest_alert"></button></div>
+      <div class="nav_item real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
+        <!-- {#each tools as item}
           {#if (item.equip)}
               <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
           {/if}                
-      {/each}
-        <div class="nav_item real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
+      {/each} -->
     </nav>
   </div>
 
-  {#each bagpacks as bagpack}
-    {#if (bagpack.equip)}
-    <div class="current_bagpack">
-      <img src={bagpack.image} alt="bagpack">
-      <h2>{Math.trunc(somme)}/{bagpack.capacity}</h2>
+  <div class="side_nav_container">
+    <div class="side_nav_content">
+      <div class="nav_item"><button on:click={afficherPopup}><img src="shop.png" alt=shop></button></div>
+      <div class="nav_item center"><button on:click={worker_open_popup}><img src="worker.png" alt="workers"></button></div>
+      <div class="nav_item"><button on:click={() => showError('C\'est pas pour maintenant!', 'Une mise à jour arrive prochainement.')}><img src="lock.png" alt="lock"></button></div>
     </div>
-    {/if}
-  {/each}
-
-  <div class="sell">
-    <button on:click={sell}>Vendre</button>
   </div>
-
-  <div class="settings">
-    <button on:click={settings_open_popup}><img src="settings.png" alt="settings"></button>
-  </div>
-
 
   {#each rocks as rock}
     {#if rock.visible}
@@ -441,13 +452,26 @@ function loadData() {
     {/if}
   {/each}
 
+  <!-- <button on:click={testpub} style="width: 100%; z-index: 10000; background-color: red; margin: 50% 0 0 0;">Test pubs</button> -->
 
-  <div class="nav_container">
+
+  <!-- <div class="nav_container">
     <div class="bottom_menu">
-      <div class="nav_item"><button on:click={afficherPopup}><img src="shop.png" alt=shop></button></div>
-      <div class="nav_item center"><button on:click={worker_open_popup}><img src="worker.png" alt="workers"></button></div>
-      <div class="nav_item"><button on:click={() => showError('C\'est pas pour maintenant!', 'Une mise à jour arrive prochainement.')}><img src="lock.png" alt="lock"></button></div>
     </div>
+  </div> -->
+
+  <div class="bottom_menu">
+    {#each bagpacks as bagpack}
+      {#if (bagpack.equip)}
+      <div class="current_bagpack">
+        <img src={bagpack.image} alt="bagpack">
+        <h2>{Math.trunc(somme)}/{bagpack.capacity}</h2>
+        <div class="sell">
+          <button on:click={sell}>Vendre</button>
+        </div>
+      </div>
+      {/if}
+    {/each}
   </div>
 
   <Popup bind:show={showPopup} on:rediriger={redirigerPage}/>
@@ -499,6 +523,18 @@ function loadData() {
       <h3><img src="settings.png" alt="settings">Options</h3><br><br>
       <p>Musique <label class="switch"><input type="checkbox"><span></span></label></p><br>
       <p>Son <label class="switch"><input type="checkbox"><span></span></label></p>
+    </div>
+  </div>
+
+  <div class="quest_overlay" style={quest_popup_show}>
+    <div class="quest_popup">
+      <button class="close" on:click={quest_close_popup}>x</button>
+      <h3><img src="quest_alert.png" alt="quest">Quêtes</h3><br><br>
+      <div class="quest_container">
+        <h5>Nom de la quête</h5>
+        <p>Faire une tâche</p>
+        <progress max="100" value="70"></progress>
+      </div>
     </div>
   </div>
 
@@ -591,24 +627,6 @@ function loadData() {
   }
 
   /* Settings */
-
-  .settings{
-    position: absolute;
-    right: 0;
-    margin: 30% 5px 0 0;
-  }
-
-  .settings button{
-    border: none;
-    outline: none;
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 10px 10px 5px 10px;
-  }
-
-  .settings img{
-    max-width: 25px;
-  }
 
   .settings_overlay {
     position: fixed;

@@ -77,97 +77,189 @@ button.affordable {
   margin-top: 10%;
 } */
 
+  /* Top Menu */
+
 .top_menu{
+  width: 100%;
   position: absolute;
   top: 0;
   display: flex;
-  justify-content: space-evenly;
-  width: 100%;
-  padding: 10px;
-  background-color: #212F3D;
+  justify-content: space-between;
+  background-color: transparent;
   align-items: center;
-  padding-right: 100px;
-}
-
-.top_menu .real_shop{
-  position: absolute;
-  display: block;
-  top: 0;
-  right: 0;
-  padding: 10px;
-  border-left: 3px dotted rgb(32, 180, 235);
-  border-bottom: 3px dotted rgb(32, 180, 235);
-  background-color: rgba(32, 180, 235, 0.7);
-}
-
-.bottom_menu{
-  position: absolute;
-  bottom: 0;
-  display: flex;
-  justify-content: space-evenly;
-  width: 100%;
-  border-top: 2px solid #fff;
-  align-items: center;
-  background-color: #212F3D;
-}
-
-.bottom_menu .nav_item{
-  padding: 10px;
-}
-
-.bottom_menu .center{
-  border-left: 2px solid #fff;
-  border-right: 2px solid #fff;
-}
-
-.top_menu .counter img{
-  max-width: 25px;
+  padding: 5px 5px 0 5px;
 }
 
 .top_menu .counter{
   background-color: #17202A;
   color: #fff;
   align-items: center;
+  padding: 5px 5px 0px 5px;
+  border-radius: 15px;
+}
+
+.top_menu .counter img{
+  max-width: 20px;
+}
+
+.top_menu .multiplier{
+  background-color: #17202A;
+  border-radius: 8px;
+  padding: 5px 5px 0 5px;
+  color: #fff;
+  font-size: 1em;
+  min-width: 15%;
+  padding: 5px;
+  text-align: left;
+}
+
+.top_menu .nav_item img{
+  width: 30px;
+}
+
+.top_menu .quest{
+  background-color: #17202A;
+  padding: 5px 5px 0 5px;
+  border-radius: 8px;
+}
+
+.top_menu .quest button{
+  background-color: transparent;
+  border: none;
+  outline: none;
+}
+
+.top_menu .quest img{
+  width: 20px;
+}
+
+.top_menu .real_shop{
+  padding: 5px 5px 0px 5px;
+  background-color: rgba(32, 180, 235, 1);
+  border-radius: 8px;
+}
+
+.top_menu .real_shop img{
+  width: 30px;
+}
+
+.settings button{
+  border: none;
+  outline: none;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 5px 5px 0px 5px;
+}
+
+.settings img{
+  max-width: 20px;
+}
+
+  /* Quest Popup */
+
+.quest_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.quest_popup {
+  background: white;
+  color: #333;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 100% 10px 0 10px;
+  transform: translate(0, -50%);
+}
+
+.quest_popup button{
+  position: absolute;
+  margin: 20px 0 0 0;
+  background-color: transparent;
+  border-radius: 8px;
+  border: none;
   padding: 10px;
+  right: 0;
+  margin: -10px 10px 0 0;
+}
+
+.quest_popup img{
+    width: 25px;
+    transform: translate(0, -20%);
+}
+
+.quest_popup .quest_container{
+  background-color: #f5f5f5;
+  padding: 10px 0 10px 0;
   border-radius: 10px;
 }
 
-.bottom_menu .nav_item button{
-  border: none;
-  background-color: transparent;
-  padding: 0;
+.quest_popup .quest_container progress{
+  background-color: #35b850;
+  border-radius: 10px;
 }
 
-.bottom_menu .nav_item a img, .top_menu .nav_item a img, .bottom_menu .nav_item button img{
-  max-width: 75px;
+  /* Side Nav */
+
+.side_nav_container{
+  position: absolute;
+  left: 0;
+  margin: 30% 0 0 0;
+  background-color: #fff;
+  border: 2px solid rgba(32, 180, 235, 1);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+}
+
+.side_nav_container .side_nav_content .nav_item button{
+  border: none;
+  outline: none;
+  padding: 5px;
+}
+
+.side_nav_container img{
+  width: 40px;
+}
+
+.bottom_menu{
+  position: absolute;
+  width: 70%;
+  text-align: center;
+  background-color: #17202A;
+  border-radius: 10px 10px 0 0 ;
+  padding: 5px;
+  font-size: 0.6em;
+  bottom: 0;
+  color: #fff;
+  left: 50%;
+  transform: translate(-50%, 0);
 }
 
 .current_bagpack{
-  position: absolute;
-  background-color: #212F3D;
-  border-radius: 10px;
-  padding: 10px;
-  margin: 30% 5px 5px 5px;
-  font-size: 0.6em;
-  color: #fff;
+  display: flex;
+  justify-content: space-between;
 }
 
 .current_bagpack img{
-  max-width: 50px;
-}
-
-.sell{
-  position: absolute;
-  border-radius: 10px;
-  margin: 55% 10px 10px 5px;
+  max-width: 30px;
 }
 
 .sell button{
   background-color: #35b850;
+  font-size: 1.5em;
   color: #fff;
   border: none;
+  border-radius: 15px;
   outline: none;
-  padding: 10px;
+  padding: 5px 15px 5px 15px;
 }
 
 /* .background{
