@@ -74,6 +74,11 @@
 
   let showPopup = false;
 
+  let level = 0;
+  let xp = 50;
+  let max_xp = 100;
+  let progress = 'width: ' + (xp / max_xp) * 100 + 'px';
+
   let money = 100000;
   let crystals = 0;
   let gems = 10;
@@ -116,7 +121,8 @@
       tired_price,
       tired_level,
       equipment_rock,
-      tired_money
+      tired_money,
+      quests,
     };
 
     // Convertissez les données en JSON et enregistrez-les dans le stockage local
@@ -130,7 +136,6 @@ function loadData() {
   if (savedData) {
     const parsedData = JSON.parse(savedData);
 
-    // Mettez à jour les variables avec les données chargées
     crystals = parsedData.crystals;
     gems = parsedData.gems;
     clickPower = parsedData.clickPower;
@@ -146,6 +151,7 @@ function loadData() {
     tired_level = parsedData.tired_level;
     equipment_rock = parsedData.equipment_rock;
     tired_money = parsedData.tired_money;
+    quests = parsedData.quests;
   }
 }
 
@@ -198,7 +204,11 @@ function loadData() {
     { level: 3, price: 100, gain: 3, current: false },
   ];
 
-  let crystals_error = "Fonds insuffisants pour acheter cet outil de minage !";
+  let quests = [
+    { quest: 1, image: 'worker_risk.png', title: "De meilleurs ouvriers", description: "Améliorez l'équipement de votre ouvrier au niveau supérieur", reward: 10, progress: 0, claim: false},
+    { quest: 2, image: 'worker_old.png', title: "Une meilleur assurance", description: "Améliorez l'assurance de votre ouvrier au niveau supérieur", reward: 10, progress: 0, claim: false},
+    { quest: 3, image: 'rock.png', title: "Mineur aguéri", description: "Récupérez des minerais dans votre bac à sable", reward: 5, progress: 0, claim: false},
+  ]
 
   function afficherPopup() {
     pop();
@@ -424,10 +434,15 @@ function loadData() {
         <button on:click={settings_open_popup}><img src="settings.png" alt="settings"></button>
       </div>
       <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
-      <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems} +</div>
+      <div class="xp_container">
+        <p><img src="worker.png" alt="user">Niveau d'aventure: {level}</p>
+        <div class="xp_bar_container">
+          <p>{xp} / {max_xp} xp</p>
+          <div class="xp_bar" style={progress}></div>
+        </div>
+      </div>
       <div class="multiplier"><p>x</p></div>
-      <div class="quest"><button on:click={quest_open_popup}><img src="quest_alert.png" alt="quest_alert"></button></div>
-      <div class="nav_item real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
+      <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems} +</div>
         <!-- {#each tools as item}
           {#if (item.equip)}
               <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
@@ -461,7 +476,8 @@ function loadData() {
   </div> -->
 
   <div class="bottom_menu">
-    {#each bagpacks as bagpack}
+    <div class="quest"><button on:click={quest_open_popup}><img src="quest_alert.png" alt="quest_alert"></button></div>
+      {#each bagpacks as bagpack}
       {#if (bagpack.equip)}
       <div class="current_bagpack">
         <img src={bagpack.image} alt="bagpack">
@@ -472,6 +488,7 @@ function loadData() {
       </div>
       {/if}
     {/each}
+    <div class="real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
   </div>
 
   <Popup bind:show={showPopup} on:rediriger={redirigerPage}/>
@@ -530,11 +547,24 @@ function loadData() {
     <div class="quest_popup">
       <button class="close" on:click={quest_close_popup}>x</button>
       <h3><img src="quest_alert.png" alt="quest">Quêtes</h3><br><br>
-      <div class="quest_container">
-        <h5>Nom de la quête</h5>
-        <p>Faire une tâche</p>
-        <progress max="100" value="70"></progress>
-      </div>
+      {#each quests as quest}
+        <div class="quest_container">
+          <img src={quest.image} alt="quest_image">
+          <h5>{quest.title}</h5>
+          <p>{quest.description}</p>
+          <p class="reward">{quest.reward}</p>
+          {#if quest.progress == 100}
+            {#if quest.claim}
+              <button class="wait_reward">Attendre demain</button>
+            {:else}
+              <button class="claim_reward">Récupérer</button>
+            {/if}
+          {:else}
+            <button class="go_reward">Y Aller</button>
+          {/if}
+          <progress max="100" value={quest.progress}></progress>
+        </div>
+      {/each}
     </div>
   </div>
 

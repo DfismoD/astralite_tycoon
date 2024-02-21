@@ -8,6 +8,7 @@
     let tools = [];
     let bagpacks = [];
     let minerals = [];
+    let quests = [];
     let somme;
     let crystals;
     let gems;
@@ -41,7 +42,8 @@
       tired_price,
       tired_level,
       equipment_rock,
-      tired_money
+      tired_money,
+      quests
     };
 
     // Convertissez les données en JSON et enregistrez-les dans le stockage local
@@ -70,6 +72,7 @@
             tired_level = parsedData.tired_level;
             equipment_rock = parsedData.equipment_rock;
             tired_money = parsedData.tired_money;
+            quests = parsedData.quests;
         }
     }
 
