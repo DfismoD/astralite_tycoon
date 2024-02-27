@@ -3,11 +3,8 @@
   import Swal from 'sweetalert2';
 
   import { Link, navigate } from 'svelte-routing';
-  import Shop from './Shop.svelte';
-  import Bagpack from './Bagpack.svelte';
   import Real_shop from './Real_shop.svelte';
 
-  import Popup from './Popup.svelte';
 
   import { AdMob, AdmobConsentStatus, AdmobConsentDebugGeography, type RewardAdOptions, type AdLoadInfo, RewardAdPluginEvents, type AdMobRewardItem } from '@capacitor-community/admob';
 
@@ -88,9 +85,6 @@
   let reset_somme = 0;
   let spaw_rate;
   let rocks = [];
-  let worker_popup_show = 'display: none;';
-  let settings_popup_show = 'display : none;';
-  let quest_popup_show = 'display: none;';
   let sound = true;
 
   let equipment_price = 30;
@@ -104,6 +98,7 @@
   const sell_sound = new Audio('sell_sound.mp3');
   const error = new Audio('error.mp3');
   const pop_sound = new Audio('pop_sound.mp3');
+  const money_sound = new Audio('money_sound.mp3');
 
   function saveData() {
     const dataToSave = {
@@ -208,30 +203,25 @@ function loadData() {
     { quest: 1, image: 'worker_risk.png', title: "De meilleurs ouvriers", description: "Améliorez l'équipement de votre ouvrier au niveau supérieur", reward: 10, progress: 0, claim: false},
     { quest: 2, image: 'worker_old.png', title: "Une meilleur assurance", description: "Améliorez l'assurance de votre ouvrier au niveau supérieur", reward: 10, progress: 0, claim: false},
     { quest: 3, image: 'rock.png', title: "Mineur aguéri", description: "Récupérez des minerais dans votre bac à sable", reward: 5, progress: 0, claim: false},
-  ]
+  ];
 
-  function afficherPopup() {
+  let show_popup_var = {
+    shop_popup_show: 'display: none;',
+    worker_popup_show: 'display: none;',
+    settings_popup_show: 'display : none;',
+    quest_popup_show: 'display: none;',
+    tool_popup_show: 'display: none;',
+    bagpack_popup_show: 'display: none;'
+  };
+
+  function show_popup(popup) {
     pop();
-    saveData();
-    showPopup = true;
+    show_popup_var[popup] = 'display: block;';
   }
 
-  function fermerPopup() {
-    showPopup = false;
-  }
-
-  function redirigerPage(page) {
-    fermerPopup();
-  }
-
-  function worker_open_popup(){
+  function close_popup(popup) {
     pop();
-    worker_popup_show = 'display: block;';
-  }
-
-  function worker_close_popup(){
-    pop();
-    worker_popup_show = 'display: none;';
+    show_popup_var[popup] = 'display: none;';
   }
 
   function showError(title, message){
@@ -392,16 +382,6 @@ function loadData() {
     }
   }
 
-  function settings_open_popup(){
-    pop();
-    settings_popup_show = 'display: block;';
-  }
-
-  function settings_close_popup(){
-    pop();
-    settings_popup_show = 'display: none;';
-  }
-
   function sound_settings(){
     if (sound){
       sound = false;
@@ -415,14 +395,69 @@ function loadData() {
     rewardVideo();
   }
 
-  function quest_open_popup(){
-    pop();
-    quest_popup_show = 'display: block;';
+  function buyMiningTool(tool) {
+    if (money >= tool.cost) {
+        money -= tool.cost;
+        money_sound.play();
+        tools.forEach((otherTool) => {
+            if (otherTool !== tool) {
+                otherTool.equip = false;
+            }
+        });
+        tool.buy = true;
+        tool.equip = true;
+        saveData();
+        tools = [...tools]
+    } else {
+        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour cet outils!');
+    }
   }
 
-  function quest_close_popup(){
-    pop();
-    quest_popup_show = 'display: none;';
+  function equip_tool(tool){
+      tools.forEach((otherTool) => {
+          if (otherTool !== tool) {
+              otherTool.equip = false;
+          }
+      });
+      money_sound.play();
+      tool.equip = true;
+      saveData();
+      tools = [...tools]
+  }
+
+  function buyMiningBagpack(bagpack) {
+    if (money >= bagpack.cost) {
+        money -= bagpack.cost;
+        bagpacks.forEach((otherbagback) => {
+            if (otherbagback !== bagpack) {
+                otherbagback.equip = false;
+            }
+        });
+        bagpack.buy = true;
+        bagpack.equip = true;
+        money_sound.play();
+        saveData();
+        bagpacks = [...bagpacks];
+    } else {
+        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour ce sac!');
+    }
+  }
+
+  function equip_bagpack(bagpack){
+      bagpacks.forEach((otherbagpack) => {
+          if (otherbagpack !== bagpack) {
+              otherbagpack.equip = false;
+          }
+      });
+      bagpack.equip = true;
+      money_sound.play();
+      saveData();
+      bagpacks = [...bagpacks];
+  }
+
+  function shop_popup(popup){
+    show_popup(popup);
+    close_popup('shop_popup_show');
   }
 
 </script>
@@ -431,7 +466,7 @@ function loadData() {
   <div class="nav_container">
     <nav class="top_menu">
       <div class="settings">
-        <button on:click={settings_open_popup}><img src="settings.png" alt="settings"></button>
+        <button on:click={() => show_popup('settings_popup_show')}><img src="settings.png" alt="settings"></button>
       </div>
       <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
       <div class="xp_container">
@@ -453,8 +488,8 @@ function loadData() {
 
   <div class="side_nav_container">
     <div class="side_nav_content">
-      <div class="nav_item"><button on:click={afficherPopup}><img src="shop.png" alt=shop></button></div>
-      <div class="nav_item center"><button on:click={worker_open_popup}><img src="worker.png" alt="workers"></button></div>
+      <div class="nav_item"><button on:click={() => show_popup('shop_popup_show')}><img src="shop.png" alt=shop></button></div>
+      <div class="nav_item center"><button on:click={() => show_popup('worker_popup_show')}><img src="worker.png" alt="workers"></button></div>
       <div class="nav_item"><button on:click={() => showError('C\'est pas pour maintenant!', 'Une mise à jour arrive prochainement.')}><img src="lock.png" alt="lock"></button></div>
     </div>
   </div>
@@ -469,14 +504,8 @@ function loadData() {
 
   <!-- <button on:click={testpub} style="width: 100%; z-index: 10000; background-color: red; margin: 50% 0 0 0;">Test pubs</button> -->
 
-
-  <!-- <div class="nav_container">
-    <div class="bottom_menu">
-    </div>
-  </div> -->
-
   <div class="bottom_menu">
-    <div class="quest"><button on:click={quest_open_popup}><img src="quest_alert.png" alt="quest_alert"></button></div>
+    <div class="quest"><button on:click={() => show_popup('quest_popup_show')}><img src="quest_alert.png" alt="quest_alert"></button></div>
       {#each bagpacks as bagpack}
       {#if (bagpack.equip)}
       <div class="current_bagpack">
@@ -491,11 +520,18 @@ function loadData() {
     <div class="real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
   </div>
 
-  <Popup bind:show={showPopup} on:rediriger={redirigerPage}/>
+  <div class="shop_overlay" style={show_popup_var.shop_popup_show}>
+    <div class="popup">
+      <button class="close_button" on:click={() => close_popup('shop_popup_show')}>x</button>
+      <h2><img src="shop.png" alt="shop">Magasins</h2><br><br>
+      <button class="nav_button" on:click={() => shop_popup('tool_popup_show')}>Outils</button>
+      <button class="nav_button" on:click={() => shop_popup('bagpack_popup_show')}>Sac à dos</button>
+    </div>
+  </div>
 
-  <div class="worker_overlay" style={worker_popup_show}>
+  <div class="worker_overlay" style={show_popup_var.worker_popup_show}>
     <div class="worker_popup">
-      <button class="close_button" on:click={() => worker_close_popup()}>x</button>
+      <button class="close_button" on:click={() => close_popup('worker_popup_show')}>x</button>
       <h3><img src="worker.png" alt="worker">Gestions des ouvriers</h3><br><br>
       <div class="equipment">
         <div class="worker_left">
@@ -534,18 +570,97 @@ function loadData() {
     </div>
   </div>
 
-  <div class="settings_overlay" style={settings_popup_show}>
+  <div class="tool_overlay" style={show_popup_var.tool_popup_show}>
+    <div class="market">
+        <button class="close_button" on:click={() => close_popup('tool_popup_show')} style="margin: 0px; padding: 10px;">x</button>
+        <h2><img class="" src="pioche.png" alt="pioche">Outils</h2>
+            {#each tools as tool (tool.name)}
+            <button
+                class="item"
+                class:affordable={money >= tool.cost}
+            >
+                <div class="left_content">
+                    <img src={`./${tool.image}`} alt={tool.name}>
+                </div>
+                <div class="right_content">
+                    <div class="top_content">
+                        <h4>{tool.name}</h4>
+                        <p>{tool.description}</p>
+                    </div>
+                    <div class="bottom_content">
+                        <div class="left">
+                            <p>-Apparition minerai: x{tool.am}</p>
+                            <p>-Minerai ramassés:  x{tool.mr}</p>
+                        </div>
+                        <div class="right">
+                            {#if (tool.buy)}
+                                {#if (tool.equip)}
+                                    <p class="equip">Equipé</p>
+                                {:else}
+                                    <button class="price" on:click={() => equip_tool(tool)}>Equiper</button>
+                                {/if}
+                            {:else}
+                                <button class="price" on:click={() => buyMiningTool(tool)}>{tool.cost}$</button>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+            </button>
+            {/each}
+      </div>
+  </div>
+
+  <div class="bagpack_overlay" style={show_popup_var.bagpack_popup_show}>
+    <div class="market">
+        <button class="close_button" on:click={() => close_popup('bagpack_popup_show')} style="margin: 0px; padding: 10px;">x</button>
+        <h2><img class="" src="bag.png" alt="bag">Sac</h2>
+            {#each bagpacks as item (item.name)}
+            <button
+                class="item"
+                class:affordable={money >= item.cost}
+            >
+                <div class="left_content">
+                    <img src={`./${item.image}`} alt={item.name}>
+                </div>
+                <div class="right_content">
+                    <div class="top_content">
+                        <h4>{item.name}</h4>
+                        <p>{item.description}</p>
+                    </div>
+                    <div class="bottom_content">
+                        <div class="left">
+                            <p>-Capacité: {item.capacity}</p>
+                        </div>
+                        <div class="right">
+                            {#if (item.buy)}
+                                {#if (item.equip)}
+                                    <p class="equip">Equipé</p>
+                                {:else}
+                                    <button class="price" on:click={() => equip_bagpack(item)}>Equiper</button>
+                                {/if}
+                            {:else}
+                                <button class="price" on:click={() => buyMiningBagpack(item)}>{item.cost}$</button>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+            </button>
+            {/each}
+      </div>
+  </div>
+
+  <div class="settings_overlay" style={show_popup_var.settings_popup_show}>
     <div class="settings_popup">
-      <button class="close" on:click={settings_close_popup}>x</button>
+      <button class="close" on:click={() => close_popup('settings_popup_show')}>x</button>
       <h3><img src="settings.png" alt="settings">Options</h3><br><br>
       <p>Musique <label class="switch"><input type="checkbox"><span></span></label></p><br>
       <p>Son <label class="switch"><input type="checkbox"><span></span></label></p>
     </div>
   </div>
 
-  <div class="quest_overlay" style={quest_popup_show}>
+  <div class="quest_overlay" style={show_popup_var.quest_popup_show}>
     <div class="quest_popup">
-      <button class="close" on:click={quest_close_popup}>x</button>
+      <button class="close" on:click={() => close_popup('quest_popup_show')}>x</button>
       <h3><img src="quest_alert.png" alt="quest">Quêtes</h3><br><br>
       {#each quests as quest}
         <div class="quest_container">
