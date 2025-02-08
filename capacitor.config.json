@@ -1,8 +1,0 @@
-{
-  "appId": "com.astralite.app",
-  "appName": "Astralite Tyccon",
-  "webDir": "dist",
-  "server": {
-    "androidScheme": "https"
-  }
-}

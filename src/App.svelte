@@ -1,10 +1,13 @@
 <script>
+// @ts-nocheck
+
   import { Router, Link, Route } from 'svelte-routing';
+  import { onMount } from 'svelte';
   import Home from './Home.svelte';
-  import Real_shop from './Real_shop.svelte';
 </script>
+
 
 <Router>
   <Route path="/" component={Home} />
-  <Route path="/Real_shop" component={Real_shop} />
+  <!-- svelte-ignore missing-declaration -->
 </Router>

@@ -1,861 +1,829 @@
-<script lang="ts">
-  import { onMount } from 'svelte';
-  import Swal from 'sweetalert2';
+<script>
+    import { fly } from 'svelte/transition';
 
-  import { Link, navigate } from 'svelte-routing';
-  import Real_shop from './Real_shop.svelte';
-
-
-  import { AdMob, AdmobConsentStatus, AdmobConsentDebugGeography, type RewardAdOptions, type AdLoadInfo, RewardAdPluginEvents, type AdMobRewardItem } from '@capacitor-community/admob';
-
-  async function showConsent() {
-    const consentInfo = await AdMob.requestConsentInfo();
-
-    if (consentInfo.isConsentFormAvailable && consentInfo.status === AdmobConsentStatus.REQUIRED) {
-      const { status } = await AdMob.showConsentForm();
-    }
-  }
-
-  async function rewardVideo(): Promise<void> {
-    console.log('Début de la fonction rewardVideo');
-    AdMob.addListener(RewardAdPluginEvents.Loaded, (info: AdLoadInfo) => {
-      // Subscribe prepared rewardVideo
-      console.log('Publicité chargée avec succès', info);
+    document.addEventListener('DOMContentLoaded', (event) => {
+        loadData();
+        updateMultiplier();
+        incrementTimer();
     });
 
-    AdMob.addListener(RewardAdPluginEvents.Rewarded, (rewardItem: AdMobRewardItem) => {
-      // Subscribe user rewarded
-      console.log(rewardItem);
-      console.log('Utilisateur récompensé', rewardItem);
-    });
+    let pseudo = "User";
 
-    const options: RewardAdOptions = {
-      adId: 'ca-app-pub-3917461892557500/7126849771',
-      isTesting: true,
-      // npa: true
-      // ssv: {
-      //   userId: "A user ID to send to your SSV"
-      //   customData: JSON.stringify({ ...MyCustomData })
-      //}
-    };
-    console.log('Avant AdMob.prepareRewardVideoAd');
-    await AdMob.prepareRewardVideoAd(options);
-    console.log('Après AdMob.prepareRewardVideoAd');
+    let money = 1000;
+    let gem = 0;
+    let coin = 100;
+    let level = 0;
+    let xp = 0;
+    let xp_max = 25;
+    let xp_tempory = 0;
 
-    console.log('Avant AdMob.showRewardVideoAd');
-    const rewardItem = await AdMob.showRewardVideoAd();
-    console.log('Après AdMob.showRewardVideoAd', rewardItem);
-  }
+    let zone = 1;
 
-  export async function initialize(): Promise<void> {
-    await AdMob.initialize();
+    let bag_content = 0;
 
-    const [trackingInfo, consentInfo] = await Promise.all([
-      AdMob.trackingAuthorizationStatus(),
-      AdMob.requestConsentInfo(),
-    ]);
+    let owned_tool = [1];
+    let equipped_tool = 1;
+    let owned_bag = [1];
+    let equipped_bag = 1;
 
-    if (trackingInfo.status === 'notDetermined') {
-      await AdMob.requestTrackingAuthorization();
+    let found = false;
+
+    function saveData() {
+        const dataToSave = {
+        pseudo,
+        stats,
+        quests,
+        money,
+        coin,
+        level,
+        xp,
+        zone,
+        bag_content,
+        owned_tool,
+        equipped_tool,
+        owned_bag,
+        equipped_bag,
+        mineral_1,
+        general,
+        mine_quests,
+        versatile_quests,
+        collector_quests,
+        logistic: logistic.map(item => ({ id: item.id, level: item.level, price: item.currentPrice }))
+        };
+
+        localStorage.setItem('astralite_tycoon_data', JSON.stringify(dataToSave));
     }
 
-    const authorizationStatus = await AdMob.trackingAuthorizationStatus();
-    if (
-      authorizationStatus.status === 'authorized' &&
-      consentInfo.isConsentFormAvailable &&
-      consentInfo.status === AdmobConsentStatus.REQUIRED
-    ) {
-      await AdMob.showConsentForm();
-    }
-  }
+    function loadData() {
+        const savedData = localStorage.getItem('astralite_tycoon_data');
 
-  let showPopup = false;
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
 
-  let level = 0;
-  let xp = 50;
-  let max_xp = 100;
-  let progress = 'width: ' + (xp / max_xp) * 100 + 'px';
+            pseudo = parsedData.pseudo;
+            stats = parsedData.stats;
+            quests = parsedData.quests;
+            money = parsedData.money;
+            coin = parsedData.coin;
+            level = parsedData.level;
+            xp = parsedData.xp;
+            zone = parsedData.zone;
+            bag_content = parsedData.bag_content;
+            owned_tool = parsedData.owned_tool;
+            equipped_tool = parsedData.equipped_tool;
+            owned_bag = parsedData.owned_bag;
+            equipped_bag = parsedData.equipped_bag;
+            mineral_1 = parsedData.mineral_1;
+            general = parsedData.general;
+            mine_quests = parsedData.mine_quests;
+            versatile_quests = parsedData.versatile_quests;
+            collector_quests = parsedData.collector_quests;
 
-  let money = 100000;
-  let crystals = 0;
-  let gems = 10;
-  let clickPower = 1;
-  let crystalsPerSecond = 0;
-  let somme = 0;
-  let reset_somme = 0;
-  let spaw_rate;
-  let rocks = [];
-  let sound = true;
+            parsedData.logistic.forEach(savedItem => {
+                const item = logistic.find(i => i.id === savedItem.id);
+                if (item) {
+                    item.level = savedItem.level;
+                    item.currentPrice = savedItem.price; // Correction ici
+                }
+            });
 
-  let equipment_price = 30;
-  let equipment_level = 0;
-  let tired_price = 50;
-  let tired_level = 0;
-  let equipment_rock = 0;
-  let tired_money = 0;
-
-  const rock_collect_sound = new Audio('rock_collect.mp3');
-  const sell_sound = new Audio('sell_sound.mp3');
-  const error = new Audio('error.mp3');
-  const pop_sound = new Audio('pop_sound.mp3');
-  const money_sound = new Audio('money_sound.mp3');
-
-  function saveData() {
-    const dataToSave = {
-      crystals,
-      gems,
-      clickPower,
-      crystalsPerSecond,
-      tools,
-      bagpacks,
-      minerals,
-      somme,
-      money,
-      equipment_price,
-      equipment_level,
-      tired_price,
-      tired_level,
-      equipment_rock,
-      tired_money,
-      quests,
-    };
-
-    // Convertissez les données en JSON et enregistrez-les dans le stockage local
-    localStorage.setItem('astralite_tycoon_data', JSON.stringify(dataToSave));
-  }
-
-  // Ajoutez cette fonction dans votre script
-function loadData() {
-  const savedData = localStorage.getItem('astralite_tycoon_data');
-
-  if (savedData) {
-    const parsedData = JSON.parse(savedData);
-
-    crystals = parsedData.crystals;
-    gems = parsedData.gems;
-    clickPower = parsedData.clickPower;
-    crystalsPerSecond = parsedData.crystalsPerSecond;
-    tools = parsedData.tools;
-    bagpacks = parsedData.bagpacks;
-    minerals = parsedData.minerals;
-    somme = parsedData.somme;
-    money = parsedData.money;
-    equipment_price = parsedData.equipment_price;
-    equipment_level = parsedData.equipment_level;
-    tired_price = parsedData.tired_price;
-    tired_level = parsedData.tired_level;
-    equipment_rock = parsedData.equipment_rock;
-    tired_money = parsedData.tired_money;
-    quests = parsedData.quests;
-  }
-}
-
-  // Appelez loadData dans onMount
-  onMount(() => {
-    loadData();
-    showRock();
-    equipment_bonus();
-    tired_bonus();
-  });
-
-  onMount(async () => {
-    await initialize();
-    await rewardVideo();
-  })
-
-
-  let minerals = [
-    { name: "cobblestone", quantity: 0, price: 1 },
-  ];
-
-  let tools = [
-    { name: "Brosse", cost: 0, am: 1, mr: 1, image: "dustpan.png", description: "Un outil très rudimentaire, vous ne trouverez pas pire", buy: true, equip: true },
-    { name: "Jouets de plage", cost: 20, am: 1, mr: 2, image: "beatch_toy.png", description: "Rassurez-moi, vous ne les avez tout de même pas volé?", buy: false, equip: false },
-    { name: "Truelle", cost: 100, am: 1.2, mr: 3, image: "trowel.png", description: "Ce n'est pas son utilité première mais ça devrait faire l'affaire.", buy: false, equip: false },
-    { name: "Pelle", cost: 350, am: 1.45, mr: 3.45, image: "shovel.png", description: "Un outil des plus classiques, avec une prise en main rapide!", buy: false, equip: false },
-    { name: "Pelle à neige", cost: 350, am: 1.15, mr: 4.35, image: "snow_shovel.png", description: "Un outil plus atypique, efficace pour attraper pleins de minerais à la fois!", buy: false, equip: false },
-    { name: "Grande pelle", cost: 1000, am: 1.2, mr: 4.5, image: "large_shovel.png", description: "Un outil des plus classiques, avec une prise en main rapide, mais en plus grand!", buy: false, equip: false },
-  ];
-
-  let bagpacks = [
-    { name: "Banane", cost: 0, capacity: 10, image: "fanny.png", description: "Vous pourrez y ranger quelques minerais entre vos clés et votre portefeuille...", buy: true, equip: true },
-    { name: "Sac", cost: 110, capacity: 70, image: "bag.png", description: "Un sac plastique résistant, mais n’y mettez pas trop de minerais!", buy: false, equip: false },
-    { name: "Mallete", cost: 1150, capacity: 300, image: "mallet.png", description: "Adorée des professeurs de Maths, cette mallette vous garantie une grande capacité pour vos minerais!", buy: false, equip: false },
-    { name: "Sac à dos", cost: 7300, capacity: 800, image: "backpack.png", description: "Un sac à dos classique qui permet un stockage important de minerai.", buy: false, equip: false },
-    { name: "Sac de gym", cost: 18000, capacity: 2000, image: "gymbag.png", description: "Un sac cylindrique énorme qui assure un grand stockage de minerai et de rechange!", buy: false, equip: false },
-    { name: "Sac d'aventurier", cost: 45000, capacity: 6500, image: "adventurebag.png", description: "Idéal pour ramasser les cailloux sur le bord des routes au cours de vos aventures !", buy: false, equip: false },
-    { name: "Sac militaire", cost: 200000, capacity: 15000, image: "militarybag.png", description: "Tout grand soldat a besoin d’un sac aussi grand que lui !", buy: false, equip: false }
-  ];
-
-  let equipments = [
-    { level: 1, price: 0, gain: 1, current: true },
-    { level: 2, price: 30, gain: 2, current: false },
-    { level: 3, price: 100, gain: 3, current: false },
-  ];
-
-  let tireds = [
-    { level: 1, price: 0, gain: 1, current: true },
-    { level: 2, price: 30, gain: 2, current: false },
-    { level: 3, price: 100, gain: 3, current: false },
-  ];
-
-  let quests = [
-    { quest: 1, image: 'worker_risk.png', title: "De meilleurs ouvriers", description: "Améliorez l'équipement de votre ouvrier au niveau supérieur", reward: 10, progress: 0, claim: false},
-    { quest: 2, image: 'worker_old.png', title: "Une meilleur assurance", description: "Améliorez l'assurance de votre ouvrier au niveau supérieur", reward: 10, progress: 0, claim: false},
-    { quest: 3, image: 'rock.png', title: "Mineur aguéri", description: "Récupérez des minerais dans votre bac à sable", reward: 5, progress: 0, claim: false},
-  ];
-
-  let show_popup_var = {
-    shop_popup_show: 'display: none;',
-    worker_popup_show: 'display: none;',
-    settings_popup_show: 'display : none;',
-    quest_popup_show: 'display: none;',
-    tool_popup_show: 'display: none;',
-    bagpack_popup_show: 'display: none;'
-  };
-
-  function show_popup(popup) {
-    pop();
-    show_popup_var[popup] = 'display: block;';
-  }
-
-  function close_popup(popup) {
-    pop();
-    show_popup_var[popup] = 'display: none;';
-  }
-
-  function showError(title, message){
-    Swal.fire({
-      icon: 'error',
-      title: title,
-      text: message,
-      confirmButtonColor: '#35b850',
-    });
-    error.play();
-  }
-
-  function showRock() {
-    const newRock = {
-      X: window.innerWidth / 10 + Math.random() * (window.innerWidth / 1.4),
-      Y: window.innerHeight / 1.7 + Math.random() * (window.innerHeight / 5),
-      visible: true
-    };
-
-    if (rocks.length < 10){
-      rocks = [...rocks, newRock];
-    } else {
-      rocks.shift();
-      rocks = [...rocks, newRock];
+        }
     }
 
-    tools.forEach(item => {
-      if (item.equip){
-        spaw_rate = 1000 / item.am;
-      }
-    });
+    let float_mineral = [];
 
-    setTimeout(() =>{
-      showRock();
-    },spaw_rate);
-  }
+    let tools = [
+        {id:1, name:"Brosse à dents", image:"tools/tool1.png", price:0, multiplier:1, capacity_min:1, capitcity_max:2, cooldown:0.1, description:"Un outil très rudimentaire, vous ne trouverez pas pire.", zone:1},
+        {id:2, name:"Pelle à poussière", image:"tools/tool2.png", price:20, multiplier:1, capacity_min:2, capitcity_max:3, cooldown:0.1, description:"Très utile pour balayer la poussière chez soi, un peu moins pour creuser...", zone:1},
+        {id:3, name:"Jouets de plage", image:"tools/tool3.png", price:100, multiplier:1, capacity_min:2, capitcity_max:5, cooldown:0.1, description:"Un outil efficace, si l’on imagine pas le petit qui n’a plus de jouets...", zone:1},
+        {id:4, name:"Truelle", image:"tools/tool4.png", price:400, multiplier:1.02, capacity_min:4, capitcity_max:6, cooldown:0.1, description:"Ce n’est pas son utilité première, mais ça devrait faire l’affaire !", zone:2},
+        {id:5, name:"Pelle", image:"tools/tool5.png", price:950, multiplier:1.2, capacity_min:6, capitcity_max:8, cooldown:0.1, description:"Un outil des plus classiques, avec une prise en main rapide !", zone:2},
+        {id:6, name:"Pelle à neige", image:"tools/tool6.png", price:1000, multiplier:1.05, capacity_min:7, capitcity_max:10, cooldown:0.1, description:"Un outil plus atypique, efficace pour attraper plein de minerais à la fois !", zone:2},
+        {id:7, name:"Grande pelle", image:"tools/tool7.png", price:4000, multiplier:1.055, capacity_min:9, capitcity_max:13, cooldown:0.1, description:"Un outil des plus classiques, avec une prise en main rapide, en plus grand !", zone:2},
+    ];
 
-  function hideRock(rock) {
-    rock.visible = false;
-    rocks = [...rocks];
-  }
+    let bags = [
+        {id:1, name:"Poches", image:"bags/bag1.png", price:0, multiplier:1, capacity:20, description:"Avoir les poches vides permet de mieux les remplir...", zone:1},
+        {id:2, name:"Sac plastique", image:"bags/bag2.png", price:50, multiplier:1, capacity:50, description:"Habitué aux légumes de saison, esperons que ce sac ne se déchire pas...", zone:1},
+        {id:3, name:"Sac alimentaire", image:"bags/bag3.png", price:130, multiplier:1.05, capacity:110, description:"Plus solide que son homologue en plastoc.", zone:1},
+        {id:4, name:"Banane de chantier", image:"bags/bag4.png", price:850, multiplier:1.12, capacity:200, description:"Vous pourrez y ranger quelques minerais entre vos clés et portefeuille...", zone:2},
+        {id:5, name:"Sac à main", image:"bags/bag5.png", price:3000, multiplier:1.18, capacity:380, description:"Un sac à main, vous ne savez pas ce que c’est ?", zone:2},
+        {id:6, name:"Malette", image:"bags/bag6.png", price:5500, multiplier:1.25, capacity:600, description:"Adorée des professeurs de Maths, la mallette permet une grande capacité !", zone:2},
+    ];
 
-  function mineRock(rock) {
-    if (rock.visible) {
-      tools.forEach(tool => {
-        if (tool.equip){
-          let current_tool = tool;
-          bagpacks.forEach(bagpack => {
-            if (bagpack.equip){
-              if ((somme + current_tool.mr) <= bagpack.capacity){
-                minerals[0].quantity += 1 * current_tool.mr;
+    let logistic = [
+        {id:1, name:"Équipement des mineurs", image:"manage/accident.png", color:"#73BEDD", amelioration:"Rendement des mineurs", level:0, price:20, baseYield:2, currentYield:2, description:"Plus vos mineurs sont protégés, plus ils sont efficaces dans leurs sessions !"},
+        {id:2, name:"Nourriture sur les sites", image:"manage/food.png", color:"#B573DD", amelioration:"Amélioration du rendement", level:0, price:20, baseYield:2, currentYield:2, description:"Améliorez la qualité de la nourriture sur vos sites de minage pour améliorer le rendement de vos mineurs"},
+        {id:3, name:"Livraison des minerais", image:"manage/delivery.png", color:"#BCBE61", amelioration:"Multiplicateur de vente", level:0, price:20, baseYield:2, currentYield:2, description:"Une livraison rapide aux raffineries vous assure un bon retour de la clientèle"},
+        {id:4, name:"Horaires des mineurs", image:"manage/time.png", color:"#737EDD", amelioration:"Temps supplémentaire", level:0, price:20, baseYield:1.25, currentYield:1.25, description:"Améliorez le salaire de vos mineurs afin qu’ils travaillent pendant votre absence !"},
+        {id:5, name:"Motivation des mineurs", image:"manage/motivation.png", color:"#BE7761", amelioration:"Bonus gain d'absence", level:0, price:20, baseYield:1.25, currentYield:1.25, description:"Mettez en place des structures pour motiver vos mineurs lors de votre absence"},
+        {id:6, name:"Sécurité des sites", image:"manage/security.png", color:"#61BE8C", amelioration:"Gain d'expérience", level:0, price:20, baseYield:1.25, currentYield:1.25, description:"Renforcez la sécurité de vos sites afin d’éviter les pertes et accidents qui dégradent votre image"},
+    ];
 
-                rock_collect_sound.play();
-                rock_collect_sound.volume = 0.5;
+    let general = [
+        {id:1, name:"Réduction du délai", image:"manage/hourglass.png", color:"#5664E2", amelioration:"Réduction du délai sur les outils", level:0, price:1, description:"Améliorez l’entretien de vos outils afind de diminuer leur surchauffe pour les utiliser plus souvent"},
+        {id:2, name:"Contact fournisseurs", image:"manage/contact.png", color:"#6BBC73", amelioration:"Réduction des prix", level:0, price:1, description:"Renforcez les contacts avec vos fournisseurs afin d’obtenir des réductions sur vos futurs achats de matériel"},
+        {id:3, name:"Rafinage des minerais", image:"manage/mineral.png", color:"#B1B422", amelioration:"Multiplicateur de vente", level:0, price:1, description:"Améliorez la qualité de votre système de rafinage afin d’augmenter vos prix de vente"},
+        {id:4, name:"Champs de trèfles", image:"manage/clover.png", color:"#DD73A6", amelioration:"Chance supplémentaire", level:0, price:1, description:"Entretenez un champ de trèfles pour que la chance soit avec vous"},
+        {id:5, name:"Sacs améliorés", image:"manage/renforced_bag.png", color:"#1DAFEE", amelioration:"Bonus de stockage", level:0, price:1, description:"Vous pouvez investir dans un rouleau d’adhésif pour renforcer vos sacs"},
+        {id:6, name:"Outlis améliorés", image:"manage/renforced_tool.png", color:"#ED4F4F", amelioration:"Bonus de récolte", level:0, price:1, description:"Aprovisionnez-vous d’outils de meilleure qualité pour des sessions plus efficaces"},
+    ];
 
-                minerals.forEach(mineral => {
-                  reset_somme = reset_somme + mineral.quantity;
+    let mine_quests = [
+        {id:1, name:"Mineur novice", description:"Ramassez un total de 500 minerais", objectif:500, progression:0, reward_money:1000, reward_gem:5, reward_coin:1, owned:0},
+        {id:2, name:"Mineur expérimenté", description:"Ramassez un total de 5000 minerais", objectif:5000, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+        {id:3, name:"Mineur expert", description:"Ramassez un total de 100 000 minerais", objectif:100000, progression:0, reward_money:100000, reward_gem:50, reward_coin:0, owned:0},
+        {id:4, name:"As de la mine", description:"Ramassez un total de 50M minerais", objectif:50000000, progression:0, reward_money:100000, reward_gem:50, reward_coin:0, owned:0},
+    ];
 
-                });
-                somme = reset_somme;
-                reset_somme = 0;
-              } else {
-                showError("Videz votre sac!", "Votre sac est rempli, videz le pour y ranger de nouvelles chose.");
-                minerals[0].quantity += bagpack.capacity - somme; 
-                somme = bagpack.capacity;
-              }
+    let act_mine_quest_index = mine_quests.findIndex(item => item.owned != 1);
+    let act_mine_quest = act_mine_quest_index !== -1 ? mine_quests[act_mine_quest_index] : null;
+
+    let versatile_quests = [
+        {id:1, name:"Apprenti polyvalent", description:"Améliorez toutes les optimisations de logistique au niveau 25", objectif:25, progression:0, reward_money:5000, reward_gem:50, reward_coin:0, owned:0},
+        {id:2, name:"Professionel polyvalent", description:"Améliorez toutes les optimisations de logistique au niveau 50", objectif:50, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+        {id:3, name:"Expert en polyvalence", description:"Améliorez toutes les optimisations de logistique au niveau 150", objectif:150, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+        {id:4, name:"Génie de la polyvalence", description:"Améliorez toutes les optimisations de logistique au niveau 300", objectif:300, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+    ];
+
+    let act_versatile_quest = versatile_quests.find(item => item.owned != 1);
+
+    let collector_quests = [
+        {id:1, name:"Collectionneur amateur", description:"Découvrez 5 types de minerais différents", objectif:5, progression:0, reward_money:3000, reward_gem:50, reward_coin:0, owned:0},
+        {id:2, name:"Collectionneur hors-pair", description:"Découvrez un quart de l'encyclopédie", objectif:25, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+        {id:3, name:"Grand collectionneur", description:"Découvrez la moitié de l'encyclopédie", objectif:50, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+        {id:4, name:"Détenteur du tout", description:"Atteignez 90% de l'encyclopédie", objectif:90, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+        {id:5, name:"Génie de la polyvalence", description:"??", objectif:100, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
+    ];
+
+    let act_collector_quest = collector_quests.find(item => item.owned != 1);
+
+    let quests = [
+        {id:1, name:"Les bonnes habitudes", description:"Récolter un total de 500 minerais", image:"manage/mineral.png", objectif:500, progression:0, reward_money:500, reward_xp:20, owned:0},
+        {id:2, name:"Du shopping !!", description:"Acheter un nouvel objet", image:"manage/chariot-de-chariot.png", objectif:1, progression:0, reward_money:500, reward_xp:20, owned:0},
+        {id:3, name:"Le temps c'est de l'argent", description:"Cumuler 15 minutes de jeu", image:"manage/hourglass.png", objectif:15, progression:0, reward_money:500, reward_xp:20, owned:0}
+    ];
+
+    let mineral_1 = [
+        {id:1, name:"Cailloux", image:"Mineral/rock.png", price:0, level:1, multiplier:1, owned:1},
+        {id:2, name:"Grés", image:"Mineral/likings.png", price:100, level:1, multiplier:3, owned:0},
+        {id:3, name:"Argile", image:"Mineral/clay.png", price:1000, level:1, multiplier:5, owned:0}
+    ];
+    let act_mineral = mineral_1[0];
+
+    let mineral_2 = [
+        {id:1, name:"Cailloux", image:"Mineral/rock.png", price:0, level:1, multiplier:1, owned:1},
+        {id:2, name:"Grés", image:"Mineral/likings.png", price:100, level:1, multiplier:3, owned:0},
+        {id:3, name:"Argile", image:"Mineral/clay.png", price:1000, level:1, multiplier:5, owned:0}
+    ];
+
+    let stats = [
+        {id:1, name:"Minerais obtenus", quantity:0},
+        {id:2, name:"Argent obtenus", quantity:0},
+        {id:3, name:"Expérience obtenus", quantity:0},
+        {id:4, name:"Temps de jeu", quantity:0}
+    ];
+
+    function incrementTimer(){
+        stats[3].quantity += 1;
+        if (quests[2].progression != quests[2].objectif){
+            quests[2].progression += 1;
+        }
+    }
+
+    function stats_update(id, adding_quantity){
+        stats[id - 1].quantity += adding_quantity;
+    }
+
+    function open_popup(popup_name){
+        document.getElementById(popup_name).style.display = 'block';
+        document.getElementById('left_menu').style.display = 'none';
+        document.getElementById('right_menu').style.display = 'none';
+        document.getElementById('mineral').style.zIndex = '-10';
+        document.getElementById('bottom_menu').style.zIndex = '-10';
+    }
+
+    function close_popup(popup_name){
+        document.getElementById(popup_name).style.display = 'none';
+        document.getElementById('left_menu').style.display = 'block';
+        document.getElementById('right_menu').style.display = 'block';
+        document.getElementById('mineral').style.zIndex = '1';
+        document.getElementById('bottom_menu').style.zIndex = '1';
+    }
+
+    function buy_tool(tool) {
+        if (money >= tool.price && !owned_tool.includes(tool.id)) {
+            money -= tool.price;
+            owned_tool = [...owned_tool, tool.id];
+            equip_tool(tool);
+        }
+        if (quests[1].progression != quests[1].objectif) {
+            quests[1].progression += 1;
+        }
+    }
+
+    function equip_tool(tool) {
+        if (owned_tool.includes(tool.id)) {
+            equipped_tool = tool.id;
+            updateMultiplier();
+            saveData();
+        }
+    }
+
+    function buy_bag(bag) {
+        if (money >= bag.price && !owned_bag.includes(bag.id)) {
+            money -= bag.price;
+            owned_bag = [...owned_bag, bag.id];
+            equip_bag(bag);
+        }
+        if (quests[1].progression != quests[1].objectif) {
+            quests[1].progression += 1;
+        }
+    }
+
+    function equip_bag(bag) {
+        if (owned_bag.includes(bag.id)) {
+            equipped_bag = bag.id;
+            updateMultiplier();
+            saveData();
+        }
+    }
+
+    function showTools() {
+        document.getElementById('first_section').style.display = 'block';
+        document.getElementById('second_section').style.display = 'none';
+    }
+
+    function showBags() {
+        document.getElementById('first_section').style.display = 'none';
+        document.getElementById('second_section').style.display = 'block';
+    }
+
+    function showWorcker() {
+        document.getElementById('manage_first_section').style.display = 'block';
+        document.getElementById('manage_second_section').style.display = 'none';
+    }
+
+    function showLogic() {
+        document.getElementById('manage_first_section').style.display = 'none';
+        document.getElementById('manage_second_section').style.display = 'block';
+    }
+
+    function showTarget() {
+        document.getElementById('progression_first_section').style.display = 'block';
+        document.getElementById('progression_second_section').style.display = 'none';
+    }
+
+    function showEncyclopedia() {
+        document.getElementById('progression_first_section').style.display = 'none';
+        document.getElementById('progression_second_section').style.display = 'block';
+    }
+
+    function updateMultiplier() {
+        const tool = tools.find(t => t.id === equipped_tool);
+        const bag = bags.find(b => b.id === equipped_bag);
+        const totalMultiplier = (bag ? bag.multiplier : 0);
+        document.querySelector('.multiplier span').textContent = totalMultiplier.toString();
+    }
+
+    function add_xp(xp_montant) {
+        if (xp + xp_montant < xp_max) {
+            xp += xp_montant;
+        } else {
+            xp_tempory = xp_max - xp;
+            xp_montant -= xp_tempory;
+            level += 1;
+            xp = xp_montant
+        }
+        stats_update(3, xp_montant)
+        saveData()
+    }
+
+    function mineMineral(mineral){
+        const tool = tools.find(t => t.id === equipped_tool);
+        const mining_capacity = tool.capacity_min;
+        const bag_capacity = bags.find(b => b.id === equipped_bag).capacity;
+        var adding_minerals = (mining_capacity * (mineral.level * mineral.multiplier))
+
+        if (bag_content + adding_minerals <= bag_capacity) {
+            bag_content += adding_minerals;
+            add_xp(1)
+            stats_update(1, adding_minerals)
+            document.getElementById(mineral.name).animate(
+                [
+                    { transform: "scale(1.2)" },
+                    { transform: "scale(1)" }
+                ],
+                    { duration: 150 }
+            )
+            if (quests[0].progression < quests[0].objectif){
+                quests[0].progression += adding_minerals;
             }
-          })
-        }
-      });
-      hideRock(rock);
-      saveData();
-    }
-  }
-
-  function sell(){
-    if (somme != 0){
-      sell_sound.play();
-      sell_sound.volume = 0.5;
-    }
-    minerals.forEach(mineral => {
-      money += mineral.price * mineral.quantity;
-      somme -= mineral.quantity;
-      mineral.quantity = 0;
-      saveData()
-    })
-  }
-
-  function buyEquipment(equipment) {
-    if (money >= equipment_price) {
-        money -= equipment_price;
-        equipment_level ++;
-        if (equipment_level < 10) {
-          equipment_price = equipment_price * 1.2;
-          equipment_rock ++;
-        }
-        if (equipment_level < 20 && equipment_level > 9) {
-          equipment_price = equipment_price * 1.25;
-          equipment_rock += 2;
-        }
-        saveData();
-    } else {
-        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour améliorer son équipement!');
-    }
-  }
-
-  function buyTired(tired) {
-    if (money >= tired_price) {
-        money -= tired_price;
-        tired_price = tired_price * 1.2;
-        tired_level ++;
-        tired_money += 5;
-        saveData();
-    } else {
-        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour améliorer l\'assurance!');
-    }
-  }
-
-  function equipment_bonus() {
-    bagpacks.forEach(bagpack => {
-      if (bagpack.equip){
-        if (somme + equipment_rock <= bagpack.capacity) {
-          minerals[0].quantity += equipment_rock;
-          minerals.forEach(mineral => {
-            reset_somme = reset_somme + mineral.quantity;
-          });
-          somme = reset_somme;
-          reset_somme = 0;
-        }
-        if (somme + equipment_rock > bagpack.capacity) {
-          minerals[0].quantity += (bagpack.capacity - somme);
-          minerals.forEach(mineral => {
-            reset_somme = reset_somme + mineral.quantity;
-          });
-          somme = reset_somme;
-          reset_somme = 0;
-        }
-      }
-    });
-    // minerals = [...minerals];
-    setTimeout(() =>{
-      equipment_bonus();
-    },3000);
-  }
-
-  function tired_bonus() {
-    
-    money += tired_money;
-
-    setTimeout(() =>{
-      tired_bonus();
-    },3000);
-  }
-
-  function pop() {
-    if (sound){
-      pop_sound.play();
-    }
-  }
-
-  function sound_settings(){
-    if (sound){
-      sound = false;
-    } else {
-      sound = true;
-    }
-  }
-
-  function testpub(){
-    initialize();
-    rewardVideo();
-  }
-
-  function buyMiningTool(tool) {
-    if (money >= tool.cost) {
-        money -= tool.cost;
-        money_sound.play();
-        tools.forEach((otherTool) => {
-            if (otherTool !== tool) {
-                otherTool.equip = false;
+            if (act_mine_quest.progression < act_mine_quest.objectif){
+                act_mine_quest.progression += adding_minerals;
             }
-        });
-        tool.buy = true;
-        tool.equip = true;
-        saveData();
-        tools = [...tools]
-    } else {
-        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour cet outils!');
-    }
-  }
+            saveData()
 
-  function equip_tool(tool){
-      tools.forEach((otherTool) => {
-          if (otherTool !== tool) {
-              otherTool.equip = false;
-          }
-      });
-      money_sound.play();
-      tool.equip = true;
-      saveData();
-      tools = [...tools]
-  }
-
-  function buyMiningBagpack(bagpack) {
-    if (money >= bagpack.cost) {
-        money -= bagpack.cost;
-        bagpacks.forEach((otherbagback) => {
-            if (otherbagback !== bagpack) {
-                otherbagback.equip = false;
+            const mineral_item = {
+                id: Date.now(),
             }
-        });
-        bagpack.buy = true;
-        bagpack.equip = true;
-        money_sound.play();
-        saveData();
-        bagpacks = [...bagpacks];
-    } else {
-        showError('Pas asser d\'argent', 'Vous n\'avez pas asser d\'argent pour ce sac!');
+
+            float_mineral = [...float_mineral, mineral_item];
+
+            setTimeout(() => {
+                float_mineral = float_mineral.filter(i => i.id !== mineral_item.id);
+            }, 1000);
+
+        } else {
+            alert("Votre sac est plein !");
+        }
     }
-  }
 
-  function equip_bagpack(bagpack){
-      bagpacks.forEach((otherbagpack) => {
-          if (otherbagpack !== bagpack) {
-              otherbagpack.equip = false;
-          }
-      });
-      bagpack.equip = true;
-      money_sound.play();
-      saveData();
-      bagpacks = [...bagpacks];
-  }
+    function sell_bag_content() {
+        money += bag_content;
+        stats_update(2, bag_content)
+        bag_content = 0;
+        saveData();
+    }
 
-  function shop_popup(popup){
-    show_popup(popup);
-    close_popup('shop_popup_show');
-  }
+    // function add_mineral_level(mineral){
+    //     if(money >= (mineral.level * mineral.multiplier * 10)){
+    //         money -= (mineral.level * mineral.multiplier * 10)
+    //         saveData();
+    //     }
+    // }
 
+    function buy_mineral(mineral){
+        if(money >= mineral.price){
+            money -= mineral.price
+            mineral.owned = 1
+            saveData()
+            location.reload()
+        }
+    }
+
+    function edit_pseudo(){
+        document.getElementById("pseudo").style.display = 'none';
+        document.getElementById("edit_button").style.display = 'none';
+        document.getElementById("valid_button").style.display = 'block';
+        document.getElementById("pseudo_edit").style.display = 'block';
+    }
+
+    function valid_pseudo(){
+        // @ts-ignore
+        var pseudo_input = document.getElementById('pseudo_edit').value;
+        pseudo = pseudo_input;
+        document.getElementById("pseudo").style.display = 'block';
+        document.getElementById("edit_button").style.display = 'block';
+        document.getElementById("valid_button").style.display = 'none';
+        document.getElementById("pseudo_edit").style.display = 'none';
+    }
+
+    function quest_reward(quest){
+        if (quest.owned != 1){
+            money += quest.reward_money;
+            if (quest.reward_xp){
+                add_xp(quest.reward_xp);
+            }
+            if (quest.reward_gem){
+                gem += quest.reward_gem;
+            }
+            if (quest.reward_coin){
+                coin += quest.reward_coin;
+            }
+            quest.owned = 1;
+        }
+        saveData();
+    }
+
+    function upgrade_mineral_popup(mineral){
+        document.getElementById("upgrade_mineral_popup").style.display = 'block';
+        act_mineral = mineral;
+    }
+
+    function close_upgrade_mineral_popup(){
+        document.getElementById("upgrade_mineral_popup").style.display = 'none';
+    }
+
+    function upgrade_mineral(mineral){
+        if (mineral.price <= money){
+            money -= mineral.price;
+            mineral.level += 1;
+        }
+    }
+
+    function upgrade_logistic(item){
+        if (item.price <= money){
+            money -= item.price;
+            item.level += 1;
+
+            if(item.level < 24){
+                item.price += 5;
+            } else {
+                item.price += 10;
+            }
+        }
+        logistic = [...logistic];
+        saveData();
+    }
+
+    function upgrade_manager(manager){
+        if(manager.price <= coin){
+            coin -= manager.price;
+            manager.level += 1;
+        }
+        general = [...general];
+        saveData();
+    }
+
+    setInterval(incrementTimer, 60000);
 </script>
-  
+
 <main>
-  <div class="nav_container">
-    <nav class="top_menu">
-      <div class="settings">
-        <button on:click={() => show_popup('settings_popup_show')}><img src="settings.png" alt="settings"></button>
-      </div>
-      <div class="nav_item counter"><img src="dollar.png" alt="money">{Math.trunc(money)}</div>
-      <div class="xp_container">
-        <p><img src="worker.png" alt="user">Niveau d'aventure: {level}</p>
-        <div class="xp_bar_container">
-          <p>{xp} / {max_xp} xp</p>
-          <div class="xp_bar" style={progress}></div>
+    <header>
+        <div class="top_menu">
+            <div class="money"><img src="money.png" alt="money"><span id="money">{money}</span>+</div>
+            <div class="coin"><img src="coin.png" alt="coin"><span id="coin">{coin}</span></div>
+            <div class="gems"><img src="Mineral/diamond.png" alt="diamond"><span id="gems">{gem}</span><button>+</button></div>
+            <div class="xp">
+                <p class="level">{level}</p>
+                <div class="xp_bar_container">
+                    <img src="worker.png" alt="user">
+                    <p>{xp} / {xp_max} xp</p>
+                    <div class="xp_bar" style={'width: ' + (xp / xp_max) * 100 + '%'}></div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="multiplier"><p>x</p></div>
-      <div class="nav_item counter"><img src="diamond.png" alt="gems">{gems} +</div>
-        <!-- {#each tools as item}
-          {#if (item.equip)}
-              <div class="nav_item"><a href="/Shop"><img src={item.image} alt="curent_tool"></a></div>
-          {/if}                
-      {/each} -->
-    </nav>
-  </div>
+    </header>
 
-  <div class="side_nav_container">
-    <div class="side_nav_content">
-      <div class="nav_item"><button on:click={() => show_popup('shop_popup_show')}><img src="shop.png" alt=shop></button></div>
-      <div class="nav_item center"><button on:click={() => show_popup('worker_popup_show')}><img src="worker.png" alt="workers"></button></div>
-      <div class="nav_item"><button on:click={() => showError('C\'est pas pour maintenant!', 'Une mise à jour arrive prochainement.')}><img src="lock.png" alt="lock"></button></div>
+    <div class="left_menu" id="left_menu">
+        <div class="shop"><button on:click={() => open_popup("shop")}><img src="shop.png" alt="shop"></button></div>
+        <div class="workers"><button on:click={() => open_popup("manage")}><img src="manage/dashboard.png" alt="worker"></button></div>
+        <div class="profile"><button on:click={() => open_popup("profile")}><img src="profile.png" alt="profile"></button></div>
     </div>
-  </div>
 
-  {#each rocks as rock}
-    {#if rock.visible}
-      <button on:click={() => mineRock(rock)} class="rock_button">
-        <img src="/rock.png" alt="rock" style="position: absolute; left: {rock.X}px; top: {rock.Y}px; max-width: 30px;">
-      </button>
-    {/if}
-  {/each}
+    <div class="right_menu" id="right_menu">
+        <div class="lock"><button><img src="lock.png" alt="lock"></button></div>
+        <div class="settings"><button><img src="settings.png" alt="settings"></button></div>
+    </div>
 
-  <!-- <button on:click={testpub} style="width: 100%; z-index: 10000; background-color: red; margin: 50% 0 0 0;">Test pubs</button> -->
+    <div class="bottom_menu" id="bottom_menu">
+        <div class="quests"><button on:click={() => open_popup("progression")}><img src="quest.png" alt="quest"></button></div>
+        <div class="capacity_container"><img src="{bags.find(b => b.id === equipped_bag).image}" alt="bagpack"><span>{bag_content} / {bags.find(b => b.id === equipped_bag).capacity}</span><button on:click={() => sell_bag_content()} class="sell_button">VENDRE</button></div>
+        <div class="market"><button><img src="shop.png" alt="market"></button></div>
+    </div>
 
-  <div class="bottom_menu">
-    <div class="quest"><button on:click={() => show_popup('quest_popup_show')}><img src="quest_alert.png" alt="quest_alert"></button></div>
-      {#each bagpacks as bagpack}
-      {#if (bagpack.equip)}
-      <div class="current_bagpack">
-        <img src={bagpack.image} alt="bagpack">
-        <h2>{Math.trunc(somme)}/{bagpack.capacity}</h2>
-        <div class="sell">
-          <button on:click={sell}>Vendre</button>
+    <div id="mineral">
+        {#each mineral_1 as mineral}
+        {#if mineral.owned == 1}
+        <div class="mineral_content">
+            <button on:click={() => mineMineral(mineral)}>
+                <img src={mineral.image} alt={mineral.name} id={mineral.name}>
+                <p>+ {(mineral.level * mineral.multiplier) * tools.find(t => t.id === equipped_tool).capacity_min}</p>
+            </button>
+            <button class="upgrade_mineral" on:click={() => upgrade_mineral_popup(mineral)}>Améliorer</button>
         </div>
-      </div>
-      {/if}
+        {:else}
+            <button on:click={() => buy_mineral(mineral)}>
+                <img src="lock.png" alt="lock">
+                <p>{mineral.price}</p>
+            </button>
+        {/if}
+        {/each}
+    </div>
+
+    <div class="rock">
+    {#each float_mineral as item (item.id)}
+        <div
+        class="floating-item" style="left:{Math.random() * (90 -  10) + 10}%"
+        transition:fly="{{ y: 300, duration: 1000 }}">
+        <img src="Mineral/rock.png" alt="rock">
+        </div>
     {/each}
-    <div class="real_shop"><a href="/Real_shop"><img src="shopping_basket.png" alt="shopping_basket"></a></div>
-  </div>
-
-  <div class="shop_overlay" style={show_popup_var.shop_popup_show}>
-    <div class="popup">
-      <button class="close_button" on:click={() => close_popup('shop_popup_show')}>x</button>
-      <h2><img src="shop.png" alt="shop">Magasins</h2><br><br>
-      <button class="nav_button" on:click={() => shop_popup('tool_popup_show')}>Outils</button>
-      <button class="nav_button" on:click={() => shop_popup('bagpack_popup_show')}>Sac à dos</button>
     </div>
-  </div>
 
-  <div class="worker_overlay" style={show_popup_var.worker_popup_show}>
-    <div class="worker_popup">
-      <button class="close_button" on:click={() => close_popup('worker_popup_show')}>x</button>
-      <h3><img src="worker.png" alt="worker">Gestions des ouvriers</h3><br><br>
-      <div class="equipment">
-        <div class="worker_left">
-          <img src="worker_risk.png" alt="worker"><br>
-          <p>{equipment_level}</p>
-        </div>
-        <div class="worker_right">
-          <h5>Equipement de l'ouvrier</h5>
-          <p>Investissez dans l’équipement de votre ouvrier afin qu’il vous rapporte plus de minerais par seconde</p>
-          {#each equipments as equipment}
-            {#if (equipment.current)}
-            <button class="level_price" on:click={() => buyEquipment(equipment)}>
-              Améliorer: {Math.trunc(equipment_price)}$
-            </button>
-            {/if}
-          {/each}
-        </div>
-      </div><br><br>
-      <div class="tired">
-        <div class="worker_left">
-          <img src="worker_old.png" alt="worker"><br>
-          <p>{tired_level}</p>
-        </div>
-        <div class="worker_right">
-          <h5>Fatigue de l'ouvrier</h5>
-          <p>Améliorez l’assurance santé de votre ouvrier, plus celle-ci est importante, plus votre ouvrier la paiera cher</p>
-          {#each tireds as tired}
-            {#if (tired.current)}
-            <button class="level_price" on:click={() => buyTired(tired)}>
-              Améliorer: {Math.trunc(tired_price)}$
-            </button>
-            {/if}
-          {/each}
-        </div>
-      </div>
+    <div id="map_2">
     </div>
-  </div>
 
-  <div class="tool_overlay" style={show_popup_var.tool_popup_show}>
-    <div class="market">
-        <button class="close_button" on:click={() => close_popup('tool_popup_show')} style="margin: 0px; padding: 10px;">x</button>
-        <h2><img class="" src="pioche.png" alt="pioche">Outils</h2>
-            {#each tools as tool (tool.name)}
-            <button
-                class="item"
-                class:affordable={money >= tool.cost}
-            >
-                <div class="left_content">
-                    <img src={`./${tool.image}`} alt={tool.name}>
+    <div id="shop" style="display: none;">
+        <div class="pop_header">
+            <button class="exit_button" on:click={() => close_popup("shop")}><h1>Magasin</h1> <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            <button class="pop_nav_button" on:click={() => showTools()}>Outils</button>
+            <button class="pop_nav_button" on:click={() => showBags()}>Sacs</button>
+        </div>
+        <div id="first_section" class="pop_content">
+            <div class="pop_class">
+                <div class="pop_class_img"><img src="tools/tool10.png" alt="pickaxe"></div>
+                <div class="pop_class_text">
+                    <h3>Magasin d'outlis</h3>
+                    <p>Achetez ici de nouveaux outils afin de remplir plus facilement votre sac et d'obtenir de meilleurs minerais !</p>
                 </div>
-                <div class="right_content">
-                    <div class="top_content">
-                        <h4>{tool.name}</h4>
-                        <p>{tool.description}</p>
-                    </div>
-                    <div class="bottom_content">
-                        <div class="left">
-                            <p>-Apparition minerai: x{tool.am}</p>
-                            <p>-Minerai ramassés:  x{tool.mr}</p>
+            </div>
+            <div class="pop_items_container">
+                {#each tools as item}
+                    <div class="pop_item">
+                        <img src={item.image} alt={item.name}>
+                        <div class="item_text">
+                            <h5>{item.name}</h5>
+                            <p>{item.description}</p>
                         </div>
-                        <div class="right">
-                            {#if (tool.buy)}
-                                {#if (tool.equip)}
-                                    <p class="equip">Equipé</p>
-                                {:else}
-                                    <button class="price" on:click={() => equip_tool(tool)}>Equiper</button>
-                                {/if}
-                            {:else}
-                                <button class="price" on:click={() => buyMiningTool(tool)}>{tool.cost}$</button>
-                            {/if}
+                        <div class="item_info">
+                            <p class="capacity">Capacité de minage: {item.capacity_min}-{item.capitcity_max}</p>
+                            <p class="multiplicator">Chance de minerai rares: {item.multiplier}</p>
                         </div>
+                        {#if !owned_tool.includes(item.id)}
+                            <button class="buy" on:click={() => buy_tool(item)}>{item.price}$</button>
+                        {:else if equipped_tool !== item.id}
+                            <button class="equip" on:click={() => equip_tool(item)}>Équiper</button>
+                        {:else}
+                            <p class="equipped">Equipé</p>
+                        {/if}
+                        {#if item.zone > zone}
+                            <div class="locked">
+                                <img src="lock.png" alt="lock">
+                                <h3>Débloquer à la zone <br> de minage: {item.zone}</h3>
+                            </div>
+                        {/if}
                     </div>
+                {/each}
+            </div>
+        </div>
+
+        <div id="second_section" class="pop_content" style="display: none;">
+            <div class="pop_class">
+                <div class="pop_class_img"><img src="bags/bag7.png" alt="sac"></div>
+                <div class="pop_class_text">
+                    <h3>Magasin de sacs</h3>
+                    <p>Achetez ici de nouveaux sacs pour augmenter votre capacité de transport de minerais !</p>
                 </div>
-            </button>
+            </div>
+            <div class="pop_items_container">
+                {#each bags as item}
+                    <div class="pop_item">
+                        <img src={item.image} alt={item.name}>
+                        <div class="item_text">
+                            <h5>{item.name}</h5>
+                            <p>{item.description}</p>
+                        </div>
+                        <div class="item_info">
+                            <p class="capacity">Capacité: {item.capacity}</p>
+                            <p class="multiplicator">Multiplicateur: {item.multiplier}</p>
+                        </div>
+                        {#if !owned_bag.includes(item.id)}
+                            <button class="buy" on:click={() => buy_bag(item)}>{item.price}$</button>
+                        {:else if equipped_bag !== item.id}
+                            <button class="equip" on:click={() => equip_bag(item)}>Équiper</button>
+                        {:else}
+                            <p class="equipped">Equipé</p>
+                        {/if}
+                        {#if item.zone > zone}
+                            <div class="locked">
+                                <img src="lock.png" alt="lock">
+                                <h3>Débloquer à la zone <br> de minage: {item.zone}</h3>
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        </div>
+    </div>
+
+    <div id="profile" style="display: none;">
+        <div class="profile_header">
+            <button class="exit_button" on:click={() => close_popup("profile")}><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        </div>
+        <div class="pop_class">
+            <div class="pop_class_img">
+                <img src="profile.png" alt="profile">
+            </div>
+            <p id="pseudo">{pseudo}</p>
+            <input id ="pseudo_edit" type="text" placeholder="Votre pseudo" style="display: none;">
+            <button id="valid_button" on:click={() => valid_pseudo()} style="display: none;"><i class="fa-solid fa-check"></i></button>
+            <button id="edit_button" on:click={() => edit_pseudo()}><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+        <div id="stats">
+            {#each stats as stat}
+                <p>{stat.name}: {stat.quantity}</p>
             {/each}
-      </div>
-  </div>
+        </div>
+    </div>
 
-  <div class="bagpack_overlay" style={show_popup_var.bagpack_popup_show}>
-    <div class="market">
-        <button class="close_button" on:click={() => close_popup('bagpack_popup_show')} style="margin: 0px; padding: 10px;">x</button>
-        <h2><img class="" src="bag.png" alt="bag">Sac</h2>
-            {#each bagpacks as item (item.name)}
-            <button
-                class="item"
-                class:affordable={money >= item.cost}
-            >
-                <div class="left_content">
-                    <img src={`./${item.image}`} alt={item.name}>
+    <div id="manage" style="display: none;">
+        <div class="pop_header">
+            <button class="exit_button" on:click={() => close_popup("manage")}><h1>Gestion</h1> <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            <button class="pop_nav_button" on:click={() => showWorcker()}>Logistique</button>
+            <button class="pop_nav_button" on:click={() => showLogic()}>Générale</button>
+        </div>
+        <div id="manage_first_section" class="pop_content">
+            <div class="pop_class">
+                <div class="pop_class_img"><img src="manage/logistic.png" alt="worker"></div>
+                <div class="pop_class_text">
+                    <h3>Gestion logistique</h3>
+                    <p>Ici vous pouvez optimiser chaque élément présent sur votre site d’exploitation minière de manière propre à celui-ci</p>
                 </div>
-                <div class="right_content">
-                    <div class="top_content">
-                        <h4>{item.name}</h4>
+            </div>
+            <div class="pop_items_container">
+                {#each logistic as item}
+                    <div class="pop_item">
+                        <img src={item.image} alt={item.name}>
+                        <div class="item_text">
+                            <h5>{item.name}</h5>
+                            <p>{item.description}</p>
+                        </div>
+                        <div class="item_info">
+                            <p class="capacity" style:background-color={item.color}>{item.level} {item.amelioration}: $/s -----> $/s</p>
+                        </div>
+                        <button class="buy" on:click={() => upgrade_logistic(item)}>Améliorer: {item.price}$</button>
+                    </div>
+                {/each}
+            </div>
+        </div>
+
+
+        <div id="manage_second_section" class="pop_content" style="display: none;">
+            <div class="pop_class">
+                <div class="pop_class_img"><img src="manage/dashboard.png" alt="logistic"></div>
+                <div class="pop_class_text">
+                    <h3>Gestion générale</h3>
+                    <p>Ici vous pouvez optimiser chaque élément de votre exploitation minière de manière permanente</p>
+                </div>
+            </div>
+            <div class="pop_items_container">
+                {#each general as item}
+                <div class="pop_item">
+                    <img src={item.image} alt={item.name}>
+                    <div class="item_text">
+                        <h5>{item.name}</h5>
                         <p>{item.description}</p>
                     </div>
-                    <div class="bottom_content">
-                        <div class="left">
-                            <p>-Capacité: {item.capacity}</p>
-                        </div>
-                        <div class="right">
-                            {#if (item.buy)}
-                                {#if (item.equip)}
-                                    <p class="equip">Equipé</p>
-                                {:else}
-                                    <button class="price" on:click={() => equip_bagpack(item)}>Equiper</button>
-                                {/if}
-                            {:else}
-                                <button class="price" on:click={() => buyMiningBagpack(item)}>{item.cost}$</button>
-                            {/if}
-                        </div>
+                    <div class="item_info">
+                        <p class="capacity" style:background-color={item.color}>{item.level} {item.amelioration}: $/s -----> $/s</p>
                     </div>
+                    <button class="buy" on:click={() => upgrade_manager(item)}>Améliorer: {item.price}<img src="coin.png" alt="coin"></button>
                 </div>
-            </button>
             {/each}
-      </div>
-  </div>
-
-  <div class="settings_overlay" style={show_popup_var.settings_popup_show}>
-    <div class="settings_popup">
-      <button class="close" on:click={() => close_popup('settings_popup_show')}>x</button>
-      <h3><img src="settings.png" alt="settings">Options</h3><br><br>
-      <p>Musique <label class="switch"><input type="checkbox"><span></span></label></p><br>
-      <p>Son <label class="switch"><input type="checkbox"><span></span></label></p>
-    </div>
-  </div>
-
-  <div class="quest_overlay" style={show_popup_var.quest_popup_show}>
-    <div class="quest_popup">
-      <button class="close" on:click={() => close_popup('quest_popup_show')}>x</button>
-      <h3><img src="quest_alert.png" alt="quest">Quêtes</h3><br><br>
-      {#each quests as quest}
-        <div class="quest_container">
-          <img src={quest.image} alt="quest_image">
-          <h5>{quest.title}</h5>
-          <p>{quest.description}</p>
-          <p class="reward">{quest.reward}</p>
-          {#if quest.progress == 100}
-            {#if quest.claim}
-              <button class="wait_reward">Attendre demain</button>
-            {:else}
-              <button class="claim_reward">Récupérer</button>
-            {/if}
-          {:else}
-            <button class="go_reward">Y Aller</button>
-          {/if}
-          <progress max="100" value={quest.progress}></progress>
+            </div>
         </div>
-      {/each}
     </div>
-  </div>
 
+    <div id="progression" style="display: none;">
+        <div class="pop_header">
+            <button class="exit_button" on:click={() => close_popup("progression")}><h1>Progression</h1> <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            <button class="pop_nav_button" on:click={() => showTarget()}>Objectifs</button>
+            <button class="pop_nav_button" on:click={() => showEncyclopedia()}>Encyclopédie</button>
+        </div>
+        <div id="progression_first_section" class="pop_content">
+            <div class="pop_class">
+                <div class="pop_class_img"><img src="quest.png" alt="worker"></div>
+                <div class="pop_class_text">
+                    <h3>Progression Objectifs</h3>
+                    <p>Ici vous pouvez optimiser chaque élément de votre exploitation minière de manière permanente</p>
+                </div>
+            </div>
+            <div class="pop_items_container">
+                    {#each mine_quests as quest}
+                        {#if act_mine_quest.id == quest.id}
+                            <div class="pop_item">
+                                <div class="grade">
+                                    <img class="succes" src="Succes/pickaxe_{quest.id}.png" alt={quest.name}>
+                                    {#if quest.id != 1}
+                                        <img class="laurel" src="Laurel/laurel_{quest.id - 1}.png" alt={quest.name}>
+                                    {/if}
+                                </div>
+                                <div class="item_text">
+                                    <h3>{quest.name}</h3>
+                                    <p>{quest.description}</p>
+                                </div>
+                                <div class="item_info">
+                                    <div class="progression_bar_container">
+                                        <p>{quest.progression} / {quest.objectif}</p>
+                                        <div class="progression_bar" style={'width: ' + (quest.progression / quest.objectif) * 100 + '%'}></div>
+                                    </div>
+                                    <p>Récompense: {quest.reward_money} {quest.reward_gem} {quest.reward_coin}</p>
+                                </div>
+                                {#if quest.objectif != quest.progression}
+                                    <button class="incomplete">Réclamer</button>
+                                {:else}
+                                    <button class="complete" on:click={() => quest_reward(quest)}>Réclamer</button>
+                                {/if}
+                            </div>
+                        {/if}
+                    {/each}
+                {#if act_versatile_quest}
+                    <div class="pop_item">
+                        <div class="grade">
+                            <img class="succes" src="Succes/minor_{act_versatile_quest.id}.png" alt={act_versatile_quest.name}>
+                            <img class="laurel" src="Laurel/laurel_{act_versatile_quest.id}.png" alt={act_versatile_quest.name}>
+                        </div>
+                        <div class="item_text">
+                            <h3>{act_versatile_quest.name}</h3>
+                            <p>{act_versatile_quest.description}</p>
+                        </div>
+                        <div class="item_info">
+                            <div class="progression_bar_container">
+                                <p>{act_versatile_quest.progression} / {act_versatile_quest.objectif}</p>
+                                <div class="progression_bar" style={'width: ' + (act_versatile_quest.progression / act_versatile_quest.objectif) * 100 + '%'}></div>
+                            </div>
+                            <p>Récompense: {act_versatile_quest.reward_money} {act_versatile_quest.reward_gem} {act_versatile_quest.reward_coin}</p>
+                        </div>
+                        {#if act_versatile_quest.objectif != act_versatile_quest.progression}
+                            <button class="incomplete">Réclamer</button>
+                        {:else}
+                            <button class="complete" on:click={() => quest_reward(act_versatile_quest)}>Réclamer</button>
+                        {/if}
+                    </div>
+                {/if}
+                {#if act_collector_quest}
+                    <div class="pop_item">
+                        <div class="grade">
+                            <img class="succes" src="Succes/medal_{act_collector_quest.id}.png" alt={act_collector_quest.name}>
+                            <img class="laurel" src="Laurel/laurel_{act_collector_quest.id}.png" alt={act_collector_quest.name}>
+                        </div>
+                        <div class="item_text">
+                            <h3>{act_collector_quest.name}</h3>
+                            <p>{act_collector_quest.description}</p>
+                        </div>
+                        <div class="item_info">
+                            <div class="progression_bar_container">
+                                <p>{act_collector_quest.progression} / {act_collector_quest.objectif}</p>
+                                <div class="progression_bar" style={'width: ' + (act_collector_quest.progression / act_collector_quest.objectif) * 100 + '%'}></div>
+                            </div>
+                            <p>Récompense: {act_collector_quest.reward_money} {act_collector_quest.reward_gem} {act_collector_quest.reward_coin}</p>
+                        </div>
+                    {#if act_collector_quest.objectif != act_collector_quest.progression}
+                        <button class="incomplete">Réclamer</button>
+                    {:else}
+                        <button class="complete" on:click={() => quest_reward(act_collector_quest)}>Réclamer</button>
+                    {/if}
+                </div>
+            {/if}
+        </div>
+
+
+        <div id="progression_second_section" class="pop_content" style="display: none;">
+            <div class="pop_class">
+                <div class="pop_class_img"><img src="open_book.png" alt="open_book"></div>
+                <div class="pop_class_text">
+                    <h3>Encyclopédie</h3>
+                    <p>Complétez chaque partie de cet encyclopédie afin d’obtenir de précieuses récompenses</p>
+                </div>
+            </div>
+            <div class="pop_items_container">
+            </div>
+        </div>
+    </div>
+    </div>
+    
+
+
+    <div id="quest" style="display: none;">
+        <div class="pop_header">
+            <button class="exit_button" on:click={() => close_popup("quest")}><h1>Quêtes</h1> <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            <button class="pop_nav_button" on:click={() => showTarget()}>Objectifs</button>
+            <button class="pop_nav_button" on:click={() => showEncyclopedia()}>Encyclopédie</button>
+        </div>
+        <div id="quest_first_section" class="pop_content">
+            <div class="pop_class">
+                <div class="pop_class_img"><img src="quest.png" alt="worker"></div>
+                <div class="pop_class_text">
+                    <h3>Progression Objectifs</h3>
+                    <p>Ici vous pouvez trouverez des taches à accomplir. Et biensûr, tout travail mérite salaire.</p>
+                </div>
+            </div>
+            <div class="pop_items_container">
+                {#each quests as quest}
+                    <div class="pop_item">
+                        <img src={quest.image} alt={quest.name}>
+                        <div class="pop_text">
+                            <h5>{quest.name}</h5>
+                            <p>{quest.description}</p>
+                            <div class="quest_bar_container">
+                                <p>{quest.progression} / {quest.objectif}</p>
+                                <div class="quest_bar" style={'width: ' + (quest.progression / quest.objectif) * 100 + '%'}></div>
+                            </div>
+                        </div>
+                        {#if quest.objectif <= quest.progression}
+                            {#if quest.owned == 1}
+                                <div class="done">
+                                    <img src="checked.png" alt="checked">
+                                </div>
+                            {:else}
+                                <div class="recover">
+                                    <button on:click={() => quest_reward(quest)}>Récupéré</button>
+                                </div>
+                            {/if}
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        </div>
+    </div>
+
+    <div id="upgrade_mineral_popup" style="display: none;">
+        <h5>{act_mineral.name}</h5>
+        <button class="btn_close" on:click={() => close_upgrade_mineral_popup()}><img src="close.png" alt="close"></button>
+        <p>Niveau: {act_mineral.level}</p>
+        <p>Prix: {act_mineral.price}</p>
+        <button class="btn_upgrade" on:click={() => upgrade_mineral(act_mineral)}>AMELIORE</button>
+    </div>
 </main>
-<style>
-  /* Worker Popup */
-
-  .worker_overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .worker_popup {
-    background: white;
-    color: #333;
-    padding: 0 20px 20px 20px;
-    border-radius: 8px;
-    text-align: center;
-    margin: 100% 10px 0 10px;
-    transform: translate(0, -50%);
-  }
-
-  .worker_popup button{
-    margin: 20px 0 0 0;
-  }
-
-  h3 img{
-    max-width: 40px;
-    margin: 0 10px 0 0;
-    transform: translate(0, 50%);
-  }
-
-  .equipment, .tired{
-    width: 85%;
-    margin: auto;
-  }
-
-  .equipment .worker_left, .tired .worker_left{
-    position: absolute;
-    left: 0;
-    margin: 2.5% 0 0 10px;
-  }
-
-  .equipment .worker_left img, .tired .worker_left img{
-    max-width: 50px;
-  }
-
-  .equipment .worker_left p, .tired .worker_left p{
-    background-color: #212F3D;
-    color: #fff;
-    padding: 7px;
-    border-radius: 8px;
-    z-index: 1000;
-  }
-
-  .equipment .worker_right, .tired .worker_right{
-    width: 90%;
-    margin: 0 0 0 10%;
-  }
-
-  .equipment .worker_right .level_price, .tired .worker_right .level_price{
-    background-color: #35b850;
-    border-radius: 5px;
-    color: #fff;
-    padding: 5px;
-    font-size: 0.6em;
-    margin: 0;
-  }
-
-  .equipment p, .tired p{
-    font-size: 0.6em;
-    margin: 5px 0 5px 0;
-  }
-
-  .equipment button, .tired button{
-    color: #fff;
-    background-color: #35b850;
-    border-radius: 10px;
-    border: none;
-    outline: none;
-    padding: 10px;
-  }
-
-  /* Settings */
-
-  .settings_overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .settings_popup {
-    background: white;
-    color: #333;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    margin: 100% 10px 0 10px;
-    transform: translate(0, -50%);
-  }
-
-  .settings_popup button{
-    position: absolute;
-    margin: 20px 0 0 0;
-    background-color: transparent;
-    border-radius: 8px;
-    border: none;
-    padding: 10px;
-    right: 0;
-    margin: -10px 10px 0 0;
-  }
-
-  .settings_popup img{
-      max-width: 20px;
-      margin: 0 10px 0 0;
-      transform: translate(0, 20%);
-  }
-
-  .switch {
-    display: inline-block;
-    position: relative;
-    width: 50px;
-    height: 20px;
-    cursor: pointer;
-    overflow: hidden;
-    transform: translate(0, 5px);
-  }
-  .switch input {
-    position: absolute;
-    top: -30px;
-    top: -30px;
-    width: 0;
-    height: 0;
-    outline: none;
-  }
-  .switch input + span {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #99b4df;
-    border-radius: 20px;
-  }
-  .switch input + span:before {
-    content: "";
-    display: inline-block;
-    position: absolute;
-    top: 50%;
-    left: 4px;
-    width: 15px;
-    height: 15px;
-    background: white;
-    border-radius: 50%;
-    transform: translateY(-50%);
-    transition: all .5s;
-  }
-  .switch input:checked + span {
-    background: #35b850;
-  }
-  .switch input:checked + span:before {
-    left: 32px;
-  }
-</style>
