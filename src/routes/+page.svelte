@@ -1,11 +1,13 @@
-<script>
+<script lang="ts">
+    import { goto } from '$app/navigation';
+    import { onMount } from 'svelte';
     import { fly } from 'svelte/transition';
 
-    document.addEventListener('DOMContentLoaded', (event) => {
+    onMount(() => {
         loadData();
         updateMultiplier();
         incrementTimer();
-    });
+    })
 
     let pseudo = "User";
 
@@ -48,7 +50,7 @@
         mine_quests,
         versatile_quests,
         collector_quests,
-        logistic: logistic.map(item => ({ id: item.id, level: item.level, price: item.currentPrice }))
+        logistic
         };
 
         localStorage.setItem('astralite_tycoon_data', JSON.stringify(dataToSave));
@@ -78,21 +80,27 @@
             mine_quests = parsedData.mine_quests;
             versatile_quests = parsedData.versatile_quests;
             collector_quests = parsedData.collector_quests;
-
-            parsedData.logistic.forEach(savedItem => {
-                const item = logistic.find(i => i.id === savedItem.id);
-                if (item) {
-                    item.level = savedItem.level;
-                    item.currentPrice = savedItem.price; // Correction ici
-                }
-            });
+            logistic = parsedData.logistic;
 
         }
     }
 
-    let float_mineral = [];
+    let float_mineral: { id: number }[] = [];
 
-    let tools = [
+    interface Tool {
+        id: number;
+        name: string;
+        image: string;
+        price: number;
+        multiplier: number;
+        capacity_min: number;
+        capitcity_max: number;
+        cooldown: number;
+        description: string;
+        zone: number;
+    }
+
+    let tools: Tool[] = [
         {id:1, name:"Brosse à dents", image:"tools/tool1.png", price:0, multiplier:1, capacity_min:1, capitcity_max:2, cooldown:0.1, description:"Un outil très rudimentaire, vous ne trouverez pas pire.", zone:1},
         {id:2, name:"Pelle à poussière", image:"tools/tool2.png", price:20, multiplier:1, capacity_min:2, capitcity_max:3, cooldown:0.1, description:"Très utile pour balayer la poussière chez soi, un peu moins pour creuser...", zone:1},
         {id:3, name:"Jouets de plage", image:"tools/tool3.png", price:100, multiplier:1, capacity_min:2, capitcity_max:5, cooldown:0.1, description:"Un outil efficace, si l’on imagine pas le petit qui n’a plus de jouets...", zone:1},
@@ -102,7 +110,18 @@
         {id:7, name:"Grande pelle", image:"tools/tool7.png", price:4000, multiplier:1.055, capacity_min:9, capitcity_max:13, cooldown:0.1, description:"Un outil des plus classiques, avec une prise en main rapide, en plus grand !", zone:2},
     ];
 
-    let bags = [
+    interface Bag {
+        id: number;
+        name: string;
+        image: string;
+        price: number;
+        multiplier: number;
+        capacity: number;
+        description: string;
+        zone: number;
+    }
+
+    let bags: Bag[] = [
         {id:1, name:"Poches", image:"bags/bag1.png", price:0, multiplier:1, capacity:20, description:"Avoir les poches vides permet de mieux les remplir...", zone:1},
         {id:2, name:"Sac plastique", image:"bags/bag2.png", price:50, multiplier:1, capacity:50, description:"Habitué aux légumes de saison, esperons que ce sac ne se déchire pas...", zone:1},
         {id:3, name:"Sac alimentaire", image:"bags/bag3.png", price:130, multiplier:1.05, capacity:110, description:"Plus solide que son homologue en plastoc.", zone:1},
@@ -111,7 +130,20 @@
         {id:6, name:"Malette", image:"bags/bag6.png", price:5500, multiplier:1.25, capacity:600, description:"Adorée des professeurs de Maths, la mallette permet une grande capacité !", zone:2},
     ];
 
-    let logistic = [
+    interface Logistic{
+        id: number;
+        name: string;
+        image: string;
+        color: string;
+        amelioration: string;
+        level: number;
+        price: number;
+        baseYield: number;
+        currentYield: number;
+        description: string;
+    }
+
+    let logistic: Logistic[] = [
         {id:1, name:"Équipement des mineurs", image:"manage/accident.png", color:"#73BEDD", amelioration:"Rendement des mineurs", level:0, price:20, baseYield:2, currentYield:2, description:"Plus vos mineurs sont protégés, plus ils sont efficaces dans leurs sessions !"},
         {id:2, name:"Nourriture sur les sites", image:"manage/food.png", color:"#B573DD", amelioration:"Amélioration du rendement", level:0, price:20, baseYield:2, currentYield:2, description:"Améliorez la qualité de la nourriture sur vos sites de minage pour améliorer le rendement de vos mineurs"},
         {id:3, name:"Livraison des minerais", image:"manage/delivery.png", color:"#BCBE61", amelioration:"Multiplicateur de vente", level:0, price:20, baseYield:2, currentYield:2, description:"Une livraison rapide aux raffineries vous assure un bon retour de la clientèle"},
@@ -120,7 +152,18 @@
         {id:6, name:"Sécurité des sites", image:"manage/security.png", color:"#61BE8C", amelioration:"Gain d'expérience", level:0, price:20, baseYield:1.25, currentYield:1.25, description:"Renforcez la sécurité de vos sites afin d’éviter les pertes et accidents qui dégradent votre image"},
     ];
 
-    let general = [
+    interface General{
+        id: number;
+        name: string;
+        image: string;
+        color: string;
+        amelioration: string;
+        level: number;
+        price: number;
+        description: string;
+    }
+
+    let general: General[] = [
         {id:1, name:"Réduction du délai", image:"manage/hourglass.png", color:"#5664E2", amelioration:"Réduction du délai sur les outils", level:0, price:1, description:"Améliorez l’entretien de vos outils afind de diminuer leur surchauffe pour les utiliser plus souvent"},
         {id:2, name:"Contact fournisseurs", image:"manage/contact.png", color:"#6BBC73", amelioration:"Réduction des prix", level:0, price:1, description:"Renforcez les contacts avec vos fournisseurs afin d’obtenir des réductions sur vos futurs achats de matériel"},
         {id:3, name:"Rafinage des minerais", image:"manage/mineral.png", color:"#B1B422", amelioration:"Multiplicateur de vente", level:0, price:1, description:"Améliorez la qualité de votre système de rafinage afin d’augmenter vos prix de vente"},
@@ -129,7 +172,7 @@
         {id:6, name:"Outlis améliorés", image:"manage/renforced_tool.png", color:"#ED4F4F", amelioration:"Bonus de récolte", level:0, price:1, description:"Aprovisionnez-vous d’outils de meilleure qualité pour des sessions plus efficaces"},
     ];
 
-    let mine_quests = [
+    let mine_quests: Quest[] = [
         {id:1, name:"Mineur novice", description:"Ramassez un total de 500 minerais", objectif:500, progression:0, reward_money:1000, reward_gem:5, reward_coin:1, owned:0},
         {id:2, name:"Mineur expérimenté", description:"Ramassez un total de 5000 minerais", objectif:5000, progression:0, reward_money:20000, reward_gem:50, reward_coin:0, owned:0},
         {id:3, name:"Mineur expert", description:"Ramassez un total de 100 000 minerais", objectif:100000, progression:0, reward_money:100000, reward_gem:50, reward_coin:0, owned:0},
@@ -157,21 +200,45 @@
     ];
 
     let act_collector_quest = collector_quests.find(item => item.owned != 1);
+    
+    interface Quest {
+        id: number;
+        name: string;
+        description: string;
+        image?: string;
+        objectif: number;
+        progression: number;
+        reward_money: number;
+        reward_xp?: number;
+        reward_gem: number;
+        reward_coin: number;
+        owned: number;
+    }
 
-    let quests = [
-        {id:1, name:"Les bonnes habitudes", description:"Récolter un total de 500 minerais", image:"manage/mineral.png", objectif:500, progression:0, reward_money:500, reward_xp:20, owned:0},
-        {id:2, name:"Du shopping !!", description:"Acheter un nouvel objet", image:"manage/chariot-de-chariot.png", objectif:1, progression:0, reward_money:500, reward_xp:20, owned:0},
-        {id:3, name:"Le temps c'est de l'argent", description:"Cumuler 15 minutes de jeu", image:"manage/hourglass.png", objectif:15, progression:0, reward_money:500, reward_xp:20, owned:0}
+    let quests: Quest[] = [
+        {id:1, name:"Les bonnes habitudes", description:"Récolter un total de 500 minerais", image:"manage/mineral.png", objectif:500, progression:0, reward_money:500, reward_xp:20, reward_gem:0, reward_coin:0, owned:0},
+        {id:2, name:"Du shopping !!", description:"Acheter un nouvel objet", image:"manage/chariot-de-chariot.png", objectif:1, progression:0, reward_money:500, reward_xp:20, reward_gem:0, reward_coin:0, owned:0},
+        {id:3, name:"Le temps c'est de l'argent", description:"Cumuler 15 minutes de jeu", image:"manage/hourglass.png", objectif:15, progression:0, reward_money:500, reward_xp:20, reward_gem:0, reward_coin:0, owned:0}
     ];
 
-    let mineral_1 = [
+    interface Mineral {
+        id: number;
+        name: string;
+        image: string;
+        price: number;
+        level: number;
+        multiplier: number;
+        owned: number;
+    }
+
+    let mineral_1: Mineral[] = [
         {id:1, name:"Cailloux", image:"Mineral/rock.png", price:0, level:1, multiplier:1, owned:1},
         {id:2, name:"Grés", image:"Mineral/likings.png", price:100, level:1, multiplier:3, owned:0},
         {id:3, name:"Argile", image:"Mineral/clay.png", price:1000, level:1, multiplier:5, owned:0}
     ];
     let act_mineral = mineral_1[0];
 
-    let mineral_2 = [
+    let mineral_2: Mineral[] = [
         {id:1, name:"Cailloux", image:"Mineral/rock.png", price:0, level:1, multiplier:1, owned:1},
         {id:2, name:"Grés", image:"Mineral/likings.png", price:100, level:1, multiplier:3, owned:0},
         {id:3, name:"Argile", image:"Mineral/clay.png", price:1000, level:1, multiplier:5, owned:0}
@@ -191,27 +258,43 @@
         }
     }
 
-    function stats_update(id, adding_quantity){
+    function stats_update(id: number, adding_quantity: number): void{
         stats[id - 1].quantity += adding_quantity;
     }
 
-    function open_popup(popup_name){
-        document.getElementById(popup_name).style.display = 'block';
-        document.getElementById('left_menu').style.display = 'none';
-        document.getElementById('right_menu').style.display = 'none';
-        document.getElementById('mineral').style.zIndex = '-10';
-        document.getElementById('bottom_menu').style.zIndex = '-10';
+    function open_popup(popup_name: string): void{
+        const popup = document.getElementById(popup_name);
+        const leftMenu = document.getElementById('left_menu');
+        const rightMenu = document.getElementById('right_menu');
+        const mineral = document.getElementById('mineral');
+        const bottomMenu = document.getElementById('bottom_menu');
+
+        if (popup && leftMenu && rightMenu && mineral && bottomMenu) {
+            popup.style.display = 'block';
+            leftMenu.style.display = 'none';
+            rightMenu.style.display = 'none';
+            mineral.style.zIndex = '-10';
+            bottomMenu.style.zIndex = '-10';
+        }
     }
 
-    function close_popup(popup_name){
-        document.getElementById(popup_name).style.display = 'none';
-        document.getElementById('left_menu').style.display = 'block';
-        document.getElementById('right_menu').style.display = 'block';
-        document.getElementById('mineral').style.zIndex = '1';
-        document.getElementById('bottom_menu').style.zIndex = '1';
+    function close_popup(popup_name: string): void {
+        const popup = document.getElementById(popup_name);
+        const leftMenu = document.getElementById('left_menu');
+        const rightMenu = document.getElementById('right_menu');
+        const mineral = document.getElementById('mineral');
+        const bottomMenu = document.getElementById('bottom_menu');
+
+        if (popup && leftMenu && rightMenu && mineral && bottomMenu) {
+            popup.style.display = 'none';
+            leftMenu.style.display = 'block';
+            rightMenu.style.display = 'block';
+            mineral.style.zIndex = '1';
+            bottomMenu.style.zIndex = '1';
+        }
     }
 
-    function buy_tool(tool) {
+    function buy_tool(tool: Tool): void {
         if (money >= tool.price && !owned_tool.includes(tool.id)) {
             money -= tool.price;
             owned_tool = [...owned_tool, tool.id];
@@ -222,7 +305,7 @@
         }
     }
 
-    function equip_tool(tool) {
+    function equip_tool(tool: Tool): void {
         if (owned_tool.includes(tool.id)) {
             equipped_tool = tool.id;
             updateMultiplier();
@@ -230,7 +313,7 @@
         }
     }
 
-    function buy_bag(bag) {
+    function buy_bag(bag: Bag): void {
         if (money >= bag.price && !owned_bag.includes(bag.id)) {
             money -= bag.price;
             owned_bag = [...owned_bag, bag.id];
@@ -241,7 +324,7 @@
         }
     }
 
-    function equip_bag(bag) {
+    function equip_bag(bag: Bag): void {
         if (owned_bag.includes(bag.id)) {
             equipped_bag = bag.id;
             updateMultiplier();
@@ -250,43 +333,77 @@
     }
 
     function showTools() {
-        document.getElementById('first_section').style.display = 'block';
-        document.getElementById('second_section').style.display = 'none';
+        const first_section = document.getElementById('first_section');
+        const second_section = document.getElementById('second_section');
+
+        if(first_section && second_section){
+            first_section.style.display = 'block';
+            second_section.style.display = 'none';
+        }
     }
 
     function showBags() {
-        document.getElementById('first_section').style.display = 'none';
-        document.getElementById('second_section').style.display = 'block';
+        const first_section = document.getElementById('first_section');
+        const second_section = document.getElementById('second_section');
+
+        if(first_section && second_section){
+            first_section.style.display = 'block';
+            second_section.style.display = 'none';
+        }
     }
 
     function showWorcker() {
-        document.getElementById('manage_first_section').style.display = 'block';
-        document.getElementById('manage_second_section').style.display = 'none';
+        const first_section = document.getElementById('first_section');
+        const second_section = document.getElementById('second_section');
+
+        if(first_section && second_section){
+            first_section.style.display = 'block';
+            second_section.style.display = 'none';
+        }
     }
 
     function showLogic() {
-        document.getElementById('manage_first_section').style.display = 'none';
-        document.getElementById('manage_second_section').style.display = 'block';
+        const first_section = document.getElementById('first_section');
+        const second_section = document.getElementById('second_section');
+
+        if(first_section && second_section){
+            first_section.style.display = 'block';
+            second_section.style.display = 'none';
+        }
     }
 
     function showTarget() {
-        document.getElementById('progression_first_section').style.display = 'block';
-        document.getElementById('progression_second_section').style.display = 'none';
+        const first_section = document.getElementById('first_section');
+        const second_section = document.getElementById('second_section');
+
+        if(first_section && second_section){
+            first_section.style.display = 'block';
+            second_section.style.display = 'none';
+        }
     }
 
     function showEncyclopedia() {
-        document.getElementById('progression_first_section').style.display = 'none';
-        document.getElementById('progression_second_section').style.display = 'block';
+        const first_section = document.getElementById('first_section');
+        const second_section = document.getElementById('second_section');
+
+        if(first_section && second_section){
+            first_section.style.display = 'block';
+            second_section.style.display = 'none';
+        }
     }
 
     function updateMultiplier() {
         const tool = tools.find(t => t.id === equipped_tool);
         const bag = bags.find(b => b.id === equipped_bag);
         const totalMultiplier = (bag ? bag.multiplier : 0);
-        document.querySelector('.multiplier span').textContent = totalMultiplier.toString();
+        const multiplier = document.querySelector('.multiplier span');
+
+        if(multiplier){
+            multiplier.textContent = totalMultiplier.toString();
+        }
     }
 
-    function add_xp(xp_montant) {
+    function add_xp(xp_montant: number): void {
         if (xp + xp_montant < xp_max) {
             xp += xp_montant;
         } else {
@@ -299,27 +416,32 @@
         saveData()
     }
 
-    function mineMineral(mineral){
-        const tool = tools.find(t => t.id === equipped_tool);
+    function mineMineral(mineral: Mineral): void{
+        const tool = tools.find(t => t.id === equipped_tool) ?? { capacity_min: 1 };
         const mining_capacity = tool.capacity_min;
-        const bag_capacity = bags.find(b => b.id === equipped_bag).capacity;
+        const bag  = bags.find(b => b.id === equipped_bag) ?? { capacity: 20 };
         var adding_minerals = (mining_capacity * (mineral.level * mineral.multiplier))
 
-        if (bag_content + adding_minerals <= bag_capacity) {
+        if (bag_content + adding_minerals <= bag.capacity) {
             bag_content += adding_minerals;
             add_xp(1)
             stats_update(1, adding_minerals)
-            document.getElementById(mineral.name).animate(
+            const animation = document.getElementById(mineral.name);
+
+            if(animation){
+                animation.animate(
                 [
                     { transform: "scale(1.2)" },
                     { transform: "scale(1)" }
                 ],
                     { duration: 150 }
-            )
+                )
+            }
+
             if (quests[0].progression < quests[0].objectif){
                 quests[0].progression += adding_minerals;
             }
-            if (act_mine_quest.progression < act_mine_quest.objectif){
+            if (act_mine_quest && act_mine_quest.progression < act_mine_quest.objectif){
                 act_mine_quest.progression += adding_minerals;
             }
             saveData()
@@ -353,7 +475,7 @@
     //     }
     // }
 
-    function buy_mineral(mineral){
+    function buy_mineral(mineral: Mineral): void{
         if(money >= mineral.price){
             money -= mineral.price
             mineral.owned = 1
@@ -363,23 +485,37 @@
     }
 
     function edit_pseudo(){
-        document.getElementById("pseudo").style.display = 'none';
-        document.getElementById("edit_button").style.display = 'none';
-        document.getElementById("valid_button").style.display = 'block';
-        document.getElementById("pseudo_edit").style.display = 'block';
+        const pseudo_name = document.getElementById("pseudo");
+        const edit_button = document.getElementById("edit_button");
+        const valid_button = document.getElementById("valid_button");
+        const pseudo_edit = document.getElementById("pseudo_edit");
+
+        if(pseudo_name && edit_button && valid_button && pseudo_edit){
+            pseudo_name.style.display = 'none';
+            edit_button.style.display = 'none';
+            valid_button.style.display = 'block';
+            pseudo_edit.style.display = 'block';
+        }
     }
 
     function valid_pseudo(){
         // @ts-ignore
         var pseudo_input = document.getElementById('pseudo_edit').value;
         pseudo = pseudo_input;
-        document.getElementById("pseudo").style.display = 'block';
-        document.getElementById("edit_button").style.display = 'block';
-        document.getElementById("valid_button").style.display = 'none';
-        document.getElementById("pseudo_edit").style.display = 'none';
+        const pseudo_name = document.getElementById("pseudo");
+        const edit_button = document.getElementById("edit_button");
+        const valid_button = document.getElementById("valid_button");
+        const pseudo_edit = document.getElementById("pseudo_edit");
+
+        if(pseudo_name && edit_button && valid_button && pseudo_edit){
+            pseudo_name.style.display = 'none';
+            edit_button.style.display = 'none';
+            valid_button.style.display = 'block';
+            pseudo_edit.style.display = 'block';
+        }
     }
 
-    function quest_reward(quest){
+    function quest_reward(quest: Quest): void{
         if (quest.owned != 1){
             money += quest.reward_money;
             if (quest.reward_xp){
@@ -396,23 +532,31 @@
         saveData();
     }
 
-    function upgrade_mineral_popup(mineral){
-        document.getElementById("upgrade_mineral_popup").style.display = 'block';
+    function upgrade_mineral_popup(mineral: Mineral): void{
+        const mineral_popup = document.getElementById("upgrade_mineral_popup");
+
+        if(mineral_popup){
+            mineral_popup.style.display = 'block';
+        }
         act_mineral = mineral;
     }
 
     function close_upgrade_mineral_popup(){
-        document.getElementById("upgrade_mineral_popup").style.display = 'none';
+        const mineral_popup = document.getElementById("upgrade_mineral_popup");
+
+        if(mineral_popup){
+            mineral_popup.style.display = 'none';
+        }
     }
 
-    function upgrade_mineral(mineral){
+    function upgrade_mineral(mineral: Mineral): void{
         if (mineral.price <= money){
             money -= mineral.price;
             mineral.level += 1;
         }
     }
 
-    function upgrade_logistic(item){
+    function upgrade_logistic(item: Logistic): void{
         if (item.price <= money){
             money -= item.price;
             item.level += 1;
@@ -427,7 +571,7 @@
         saveData();
     }
 
-    function upgrade_manager(manager){
+    function upgrade_manager(manager: General): void{
         if(manager.price <= coin){
             coin -= manager.price;
             manager.level += 1;
@@ -469,7 +613,7 @@
 
     <div class="bottom_menu" id="bottom_menu">
         <div class="quests"><button on:click={() => open_popup("progression")}><img src="quest.png" alt="quest"></button></div>
-        <div class="capacity_container"><img src="{bags.find(b => b.id === equipped_bag).image}" alt="bagpack"><span>{bag_content} / {bags.find(b => b.id === equipped_bag).capacity}</span><button on:click={() => sell_bag_content()} class="sell_button">VENDRE</button></div>
+        <div class="capacity_container"><img src="{bags.find(b => b.id === equipped_bag)?.image}" alt="bagpack"><span>{bag_content} / {bags.find(b => b.id === equipped_bag)?.capacity}</span><button on:click={() => sell_bag_content()} class="sell_button">VENDRE</button></div>
         <div class="market"><button><img src="shop.png" alt="market"></button></div>
     </div>
 
@@ -479,7 +623,7 @@
         <div class="mineral_content">
             <button on:click={() => mineMineral(mineral)}>
                 <img src={mineral.image} alt={mineral.name} id={mineral.name}>
-                <p>+ {(mineral.level * mineral.multiplier) * tools.find(t => t.id === equipped_tool).capacity_min}</p>
+                <p>+ {(mineral.level * mineral.multiplier) * (tools.find(t => t.id === equipped_tool)?.capacity_min ?? 0)}</p>
             </button>
             <button class="upgrade_mineral" on:click={() => upgrade_mineral_popup(mineral)}>Améliorer</button>
         </div>
@@ -590,6 +734,7 @@
 
     <div id="profile" style="display: none;">
         <div class="profile_header">
+            <!-- svelte-ignore a11y_consider_explicit_label -->
             <button class="exit_button" on:click={() => close_popup("profile")}><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
         </div>
         <div class="pop_class">
@@ -598,7 +743,9 @@
             </div>
             <p id="pseudo">{pseudo}</p>
             <input id ="pseudo_edit" type="text" placeholder="Votre pseudo" style="display: none;">
+            <!-- svelte-ignore a11y_consider_explicit_label -->
             <button id="valid_button" on:click={() => valid_pseudo()} style="display: none;"><i class="fa-solid fa-check"></i></button>
+            <!-- svelte-ignore a11y_consider_explicit_label -->
             <button id="edit_button" on:click={() => edit_pseudo()}><i class="fa-solid fa-pen-to-square"></i></button>
         </div>
         <div id="stats">
@@ -681,34 +828,34 @@
                 </div>
             </div>
             <div class="pop_items_container">
-                    {#each mine_quests as quest}
-                        {#if act_mine_quest.id == quest.id}
-                            <div class="pop_item">
-                                <div class="grade">
-                                    <img class="succes" src="Succes/pickaxe_{quest.id}.png" alt={quest.name}>
-                                    {#if quest.id != 1}
-                                        <img class="laurel" src="Laurel/laurel_{quest.id - 1}.png" alt={quest.name}>
-                                    {/if}
-                                </div>
-                                <div class="item_text">
-                                    <h3>{quest.name}</h3>
-                                    <p>{quest.description}</p>
-                                </div>
-                                <div class="item_info">
-                                    <div class="progression_bar_container">
-                                        <p>{quest.progression} / {quest.objectif}</p>
-                                        <div class="progression_bar" style={'width: ' + (quest.progression / quest.objectif) * 100 + '%'}></div>
-                                    </div>
-                                    <p>Récompense: {quest.reward_money} {quest.reward_gem} {quest.reward_coin}</p>
-                                </div>
-                                {#if quest.objectif != quest.progression}
-                                    <button class="incomplete">Réclamer</button>
-                                {:else}
-                                    <button class="complete" on:click={() => quest_reward(quest)}>Réclamer</button>
+                {#each mine_quests as quest}
+                    {#if act_mine_quest?.id == quest.id}
+                        <div class="pop_item">
+                            <div class="grade">
+                                <img class="succes" src="Succes/pickaxe_{quest.id}.png" alt={quest.name}>
+                                {#if quest.id != 1}
+                                    <img class="laurel" src="Laurel/laurel_{quest.id - 1}.png" alt={quest.name}>
                                 {/if}
                             </div>
-                        {/if}
-                    {/each}
+                            <div class="item_text">
+                                <h3>{quest.name}</h3>
+                                <p>{quest.description}</p>
+                            </div>
+                            <div class="item_info">
+                                <div class="progression_bar_container">
+                                    <p>{quest.progression} / {quest.objectif}</p>
+                                    <div class="progression_bar" style={'width: ' + (quest.progression / quest.objectif) * 100 + '%'}></div>
+                                </div>
+                                <p>Récompense: {quest.reward_money} {quest.reward_gem} {quest.reward_coin}</p>
+                            </div>
+                            {#if quest.objectif != quest.progression}
+                                <button class="incomplete">Réclamer</button>
+                            {:else}
+                                <button class="complete" on:click={() => quest_reward(quest)}>Réclamer</button>
+                            {/if}
+                        </div>
+                    {/if}
+                {/each}
                 {#if act_versatile_quest}
                     <div class="pop_item">
                         <div class="grade">
@@ -827,3 +974,684 @@
         <button class="btn_upgrade" on:click={() => upgrade_mineral(act_mineral)}>AMELIORE</button>
     </div>
 </main>
+
+<style>
+    /* Base */
+
+    @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+    *{
+    margin: 0;
+    padding: 0;
+    font-family: "Poppins", sans-serif;
+
+    --primary-color: #18202B;
+    }
+
+
+    /* Body */
+
+    /* body{
+    background-image: url(background.png);
+    background-size: 100%;
+    } */
+
+    body{
+    background-color: #29ABE2;
+    }
+
+    /* header */
+
+    .top_menu{
+    width: 96%;
+    position: absolute;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    background-color: transparent;
+    align-items: center;
+    padding: 15px 5px 0 5px;
+    z-index: 10;
+    font-size: 12px;
+    }
+
+    .money{
+    width: 98px;
+    }
+
+    .coin{
+    width: 50px;
+    }
+
+    .gems{
+    width: 71px;
+    }
+
+    .gems, .money, .coin{
+    background-color: var(--primary-color);
+    color: #fff;
+    border-radius: 5px;
+    height: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+    }
+
+    .gems img, .money img, .coin img{
+    max-width: 17px;
+    }
+
+    .gems button{
+    border: none;
+    outline: none;
+    background: none;
+    color: #fff;
+    }
+
+    .xp{
+    width: 100px;
+    color: #17202A;
+    font-size: 4px;
+    margin: 0;
+    }
+
+    .xp .level{
+    position: absolute;
+    background-color: #17202A;
+    color: #fff;
+    font-size: 8px;
+    padding: 1px 2px 0px 3px;
+    border-radius: 10px;
+    transform: translate(47px, -5px);
+    }
+
+    .xp_bar_container{
+    width: 100%;
+    height: 20px;
+    border: 2px solid #17202A;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #17202A;
+    }
+
+    .xp_bar_container img{
+    position: absolute;
+    width: 19px;
+    transform: translateY(1px);
+    }
+
+    .xp_bar_container p{
+    position: absolute;
+    font-size: 7px;
+    transform: translate(33px, 7px);
+    }
+
+    .xp_bar{
+    height: 100%;
+    background-color: #F48400;
+    border-radius: 3px;
+    }
+
+    /* Left menu */
+
+    .left_menu{
+    transform: translateY(100px);
+    margin-left: 5px;
+    }
+
+    .left_menu button{
+    border: none;
+    outline: none;
+    background-color: lightblue;
+    padding: 5px 6px 1px 6px;
+    border-radius: 10px;
+    margin: 3px;
+    }
+
+    .left_menu img{
+    width: 40px;
+    }
+
+    /* right menu */
+
+    .right_menu{
+    position: absolute;
+    right: 0;
+    transform: translateY(-77px);
+    padding: 0 5px 0 0;
+    }
+
+    .right_menu .lock button{
+    border: none;
+    outline: none;
+    background-color: lightblue;
+    padding: 5px 6px 1px 6px;
+    border-radius: 10px;
+    margin: 3px;
+    }
+
+    .right_menu .lock img{
+    width: 40px;
+    }
+
+    .right_menu .settings button{
+    background-color: #fff;
+    border: none;
+    outline: none;
+    transform: translate(10px, 10px);
+    padding: 5px 5px 0 5px ;
+    border-radius: 5px;
+    }
+
+    .right_menu .settings img{
+    max-width: 30px;
+    }
+
+    /* bottom menu */
+
+    .bottom_menu{
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #29ABE2;
+    width: 100%;
+    height: 80px;
+    z-index: 1;
+    }
+
+    .bottom_menu button{
+    border: none;
+    outline: none;
+    background-color: #0770FF;
+    border-radius: 10px;
+    padding: 5px 6px 1px 6px;
+    margin: 0 10px;
+    }
+
+    .bottom_menu img{
+    width: 40px;
+    }
+
+    .bottom_menu .capacity_container{
+    width: 50%;
+    height: 60px;
+    background-color: var(--primary-color);
+    border-radius: 10px 10px 0 0;
+    color: #fff;
+    transform: translateY(10px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    }
+
+    .bottom_menu .capacity_container img{
+    width: 30px;
+    background-color: #2B384A;
+    border-radius: 10px;
+    padding: 2px;
+    }
+
+    .bottom_menu .capacity_container button.sell_button{
+    background-color: #00B912;
+    padding: 5px 15px;
+    margin: 0;
+    color: #fff;
+    font-weight: bold;
+    border-radius: 5px;
+    }
+
+    /* Mineral */
+
+    #mineral {
+    display: grid;
+    grid-template-columns: repeat(2, 2fr);
+    gap: 50px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    cursor: pointer;
+    z-index: 1;
+    }
+
+    #mineral button {
+    border: none;
+    outline: none;
+    background: none;
+    }
+
+    #mineral img {
+    width: 75px;
+    height: 75px;
+    }
+
+    #upgrade_mineral_popup{
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background-color: #8CC4DB;
+    border-radius: 10px;
+    transform: translate(50%, 50%);
+    padding: 10px;
+    opacity: 0.9;
+    z-index: 100;
+    }
+
+
+    .btn_close{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    outline: none;
+    border: none;
+    background: none;
+    }
+
+    .btn_close img{
+    width: 30px;
+    height: 30px;
+    }
+
+    .btn_upgrade{
+    position: absolute;
+    width: 88%;
+    padding: 7px 0;
+    bottom: 10px;
+    outline: none;
+    border: none;
+    border-radius: 10px;
+    background-color: #00B912;
+    color: white;
+    font: large;
+    }
+
+    /* Quest page */
+
+    .quest_bar_container{
+    width: 100%;
+    height: 15px;
+    border: 1px solid #17202A;
+    border-radius: 10px;
+    background-color: #fff;
+    color: #17202A;
+    }
+
+    .quest_bar_container p{
+    position: absolute;
+    text-align: center;
+    transform: translate(15px, 3px);
+    }
+
+    .quest_bar{
+    height: 100%;
+    border-radius: 10px;
+    background-color: #0770FF;
+    }
+
+    .pop_item .recover{
+    position: absolute;
+    width: 92.4%;
+    transform: translate(-10px, -10px);
+    background-color: #434343;
+    opacity: 0.9;
+    border-radius: 15px;
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    padding: 5.5% 0;
+    }
+
+    .pop_item .recover button{
+    outline: none;
+    border: none;
+    background: none;
+    color: #00B912;
+    font-size: large;
+    }
+
+    .pop_item .recover img{
+    width: 65px;
+    }
+
+    .done{
+    position: absolute;
+    width: 92.4%;
+    transform: translate(-10px, -10px);
+    background-color: #434343;
+    opacity: 0.9;
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    padding: 2.5% 0;
+    }
+
+    /* Shop */
+
+    #shop, #manage, #progression{
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    }
+
+    .pop_header{
+    color: #fff;
+    padding: 80px 5px 0 15px;
+    }
+
+    .pop_header .pop_nav_button{
+    border: none;
+    outline: non;
+    padding: 1px 15%;
+    border-radius: 10px 10px 0 0;
+    transform: translateY(1px);
+    }
+
+    .pop_header .exit_button{
+    color: #fff;
+    border: none;
+    outline: non;
+    background: none;
+    display: flex;
+    align-items: center;
+    }
+
+    .pop_header .exit_button :nth-child(2){
+    margin-left: 10px;
+    font-size: 2em;
+    }
+
+    .pop_header button:nth-child(2n){
+    background-color: #E2E2E2;
+    }
+
+    .pop_header button:nth-child(3n){
+    background-color: orange;
+    padding: 1px 13%;
+    }
+
+    .pop_content{
+    width: 100%;
+    height: 100%;
+    background-color: #8CC4DB;
+    border-radius: 5px 5px 0 0;
+    overflow-y: scroll;
+    }
+
+    .pop_class{
+    margin: 0 15px 10px 15px;
+    padding: 15px;
+    font-size: 10px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+    }
+
+    #first_section .pop_class, #manage_first_section .pop_class, #progression_first_section .pop_class, #quest_first_section .pop_class{
+    background-color: #E2E2E2;
+    border-radius: 0 10px 10px 10px;
+    }
+
+    #second_section .pop_class, #manage_second_section .pop_class, #progression_second_section .pop_class, #quest_second_section .pop_class{
+    background-color: orange;
+    border-radius: 10px;
+    }
+
+    .pop_class_img img{
+    width: 50px;
+    margin-right: 10px;
+    }
+
+    .pop_items_container{
+    margin: 10px 15px 10px 15px;
+    }
+
+    .pop_item{
+    background-color: #fff;
+    border-radius: 15px;
+    margin: 10px 0;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    max-height: 150px;
+    text-align: center;
+    filter: drop-shadow(0 4px 4px #575757);
+    }
+
+    .pop_item>* {
+    flex: 1 1 auto;
+    }
+
+    .pop_item>*:nth-child(1){
+    max-width: 50px;
+    }
+
+    .pop_item>*:nth-child(2){
+    width: 80%;
+    }
+
+    .pop_item img{
+    width: 50px;
+    margin-right: 10px;
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));
+    }
+
+    .pop_item h3{
+    font-size: 18px;
+    }
+
+    .pop_item p{
+    font-size: 8px;
+    }
+
+    .pop_item .capacity, .pop_item .multiplicator{
+    width: 172px;
+    height: 13px;
+    border-radius: 3px;
+    margin: 5px 0;
+    padding: 2px 0 0 5px;
+    color: #fff;
+    text-align: start;
+    }
+
+    .pop_item .capacity{
+    background-color: #29ABE2;
+    }
+
+    .pop_item .multiplicator{
+    background-color: #9747FF;
+    }
+
+    .pop_item .buy, .pop_item .equip, .pop_item .equipped{
+    color: #fff;
+    background-color: #FF382B;
+    outline: none;
+    border: none;
+    border-radius: 3px;
+    margin: 9px 10px;
+    }
+
+    .pop_item .equipped{
+    background-color: #00B912;
+    text-align: center;
+    padding: 1px 0 0 0;
+    font-size: 14px;
+    }
+
+    .pop_item .locked{
+    position: absolute;
+    width: 100%;
+    transform: translate(-10px, -10px);
+    color: #fff;
+    background-color: #434343;
+    opacity: 0.95;
+    border-radius: 10px;
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    padding: 6.5% 0;
+    }
+
+    .pop_item .locked img{
+    width: 65px;
+    }
+
+    #manage .pop_item>*:nth-child(3){
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    }
+
+    #manage .pop_item button.buy{
+    margin: 0 32%;
+    padding: 2px 0;
+    }
+
+    #manage_first_section .pop_item button.buy{
+    background-color: #00B912;
+    }
+
+    #manage_second_section .pop_item button.buy{
+    background-color: #9747FF;
+    }
+
+    #manage_second_section .pop_item button.buy img{
+    width: 15px;
+    right: 0;
+    transform: translate(60%, 20%);
+    }
+
+    #progression_first_section .pop_item .grade{
+    position: relative;
+    width: 70px;
+    height: 70px;
+    }
+
+    #progression_first_section .pop_item .succes{
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    top: 6px;
+    left: 10px;
+    z-index: 2;
+    }
+
+    #progression_first_section .pop_item .laurel{
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    top: 0;
+    left: 0;
+    }
+
+    #progression_first_section .pop_item button{
+    outline: none;
+    border: none;
+    border-radius: 5px;
+    background: none;
+    color: white;
+    font: bold;
+    margin: 0 30%;
+    padding: 3px 0;
+    }
+
+    #progression_first_section .pop_item button.incomplete{
+    background-color: #666;
+    opacity: 0.9;
+    }
+
+    #progression_first_section .pop_item button.complete{
+    background-color: #00B912;
+    }
+
+    #progression_first_section .pop_item .progression_bar_container{
+    width: 100%;
+    height: 20px;
+    border: 1px solid #17202A;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #17202A;
+    }
+
+    #progression_first_section .pop_item .progression_bar_container p{
+    position: absolute;
+    text-align: center;
+    transform: translate(50%, 50%);
+    }
+
+    #progression_first_section .pop_item .progression_bar{
+    height: 100%;
+    border-radius: 5px;
+    background-color: #78D4FB;
+    }
+
+    #progression_first_section .pop_item{
+    row-gap: 5px;
+    }
+
+    #progression_first_section .pop_item>*:nth-child(3){
+    width: 100%;
+    }
+
+    /* Profile */
+
+    #profile{
+    padding: 10% 0 160% 0;
+    background-color: white;
+    color: black;
+    width: 100%;
+    height: 100%;
+    }
+
+    .profile_header .exit_button{
+    background: none;
+    color: black;
+    outline: none;
+    border: none;
+    width: 20px;
+    }
+
+    #edit_button, #valid_button{
+    background: none;
+    outline: none;
+    border: none;
+    }
+
+
+
+    /* Map 2 */
+
+    /* #map_2{
+    z-index: 10000;
+    transform: translate(100%, 0);
+    width: 100%;
+    height: 100%;
+    background-color: #00B912;
+    } */
+
+    .floating-item {
+    position: absolute;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    pointer-events: none;
+    bottom: 30%;
+    transform: translateX(-50%);
+    z-index: 0;
+    }
+
+    .floating-item img{
+    width: 30px;
+    }
+</style>
