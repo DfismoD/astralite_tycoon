@@ -1,0 +1,566 @@
+*{
+    --primary-color: #18202B;
+}
+
+
+/* header */
+
+.top_menu{
+    width: 96%;
+    position: absolute;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    background-color: transparent;
+    align-items: center;
+    padding: 15px 5px 0 5px;
+    z-index: 10;
+    font-size: 12px;
+}
+
+.top_menu .money{
+    width: 98px;
+}
+
+.top_menu .coin{
+    width: 50px;
+}
+
+.top_menu .gems{
+    width: 71px;
+}
+
+.top_menu .gems, .top_menu .money, .top_menu .coin{
+    background-color: var(--primary-color);
+    color: #fff;
+    border-radius: 5px;
+    height: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+}
+
+.gems img, .money img, .coin img{
+    max-width: 17px;
+}
+
+.gems button{
+    border: none;
+    outline: none;
+    background: none;
+    color: #fff;
+}
+
+.xp{
+    width: 100px;
+    color: #17202A;
+    font-size: 4px;
+    margin: 0;
+}
+
+.xp .level{
+    position: absolute;
+    background-color: #17202A;
+    color: #fff;
+    font-size: 8px;
+    padding: 1px 2px 0px 3px;
+    border-radius: 10px;
+    transform: translate(47px, -5px);
+}
+
+.xp_bar_container{
+    width: 100%;
+    height: 20px;
+    border: 2px solid #17202A;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #17202A;
+}
+
+.xp_bar_container img{
+    position: absolute;
+    width: 19px;
+    transform: translateY(1px);
+}
+
+.xp_bar_container p{
+    position: absolute;
+    font-size: 7px;
+    transform: translate(33px, 7px);
+}
+
+.xp_bar{
+    height: 100%;
+    background-color: #F48400;
+    border-radius: 3px;
+}
+
+    /* Left menu */
+
+.left_menu{
+    transform: translateY(100px);
+    margin-left: 5px;
+}
+
+.left_menu button{
+    border: none;
+    outline: none;
+    background-color: lightblue;
+    padding: 5px 6px 1px 6px;
+    border-radius: 10px;
+    margin: 3px;
+}
+
+.left_menu img{
+    width: 40px;
+}
+
+    /* right menu */
+
+.right_menu{
+    position: absolute;
+    right: 0;
+    transform: translateY(-74px);
+    padding: 0 5px 0 0;
+}
+
+.right_menu .map button{
+    border: none;
+    outline: none;
+    background-color: lightblue;
+    padding: 5px 6px 1px 6px;
+    border-radius: 10px;
+    margin: 3px;
+}
+
+.right_menu .map img{
+    width: 40px;
+}
+
+.right_menu .settings button{
+    background-color: #fff;
+    border: none;
+    outline: none;
+    transform: translate(10px, 10px);
+    padding: 5px 5px 0 5px ;
+    border-radius: 5px;
+}
+
+.right_menu .settings img{
+    max-width: 30px;
+}
+
+    /* bottom menu */
+
+.bottom_menu{
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #29ABE2;
+    width: 100%;
+    height: 80px;
+    z-index: 1;
+}
+
+.bottom_menu button{
+    border: none;
+    outline: none;
+    background-color: #0770FF;
+    border-radius: 10px;
+    padding: 5px 6px 1px 6px;
+    margin: 0 10px;
+}
+
+.bottom_menu img{
+    width: 40px;
+}
+
+.bottom_menu .capacity_container{
+    width: 50%;
+    height: 60px;
+    background-color: var(--primary-color);
+    border-radius: 10px 10px 0 0;
+    color: #fff;
+    transform: translateY(10px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.bottom_menu .capacity_container img{
+    width: 30px;
+    background-color: #2B384A;
+    border-radius: 10px;
+    padding: 2px;
+}
+
+.bottom_menu .capacity_container button.sell_button{
+    background-color: #00B912;
+    padding: 5px 15px;
+    margin: 0;
+    color: #fff;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+    /* Shop */
+
+#shop, #manage, #progression{
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.pop_header{
+    width: 100vw;
+    color: #fff;
+    padding: 80px 0 0 30px;
+}
+
+.pop_header .pop_nav_button{
+    border: none;
+    outline: none;
+    padding: 1px 15%;
+    border-radius: 10px 10px 0 0;
+    transform: translateY(1px);
+}
+
+.pop_header .exit_button{
+    color: #fff;
+    border: none;
+    outline: non;
+    background: none;
+    display: flex;
+    align-items: center;
+}
+
+.pop_header .exit_button :nth-child(2){
+    margin-left: 10px;
+    font-size: 2em;
+}
+
+.pop_header button:nth-child(2n){
+    background-color: #E2E2E2;
+}
+
+.pop_header button:nth-child(3n){
+    background-color: orange;
+    padding: 1px 13%;
+}
+
+.pop_content{
+    width: 100%;
+    height: 100%;
+    background-color: #8CC4DB;
+    border-radius: 5px 5px 0 0;
+    overflow-y: scroll;
+}
+
+.pop_class{
+    margin: 0 15px 10px 15px;
+    padding: 15px;
+    font-size: 10px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+}
+
+#first_section .pop_class, #manage_first_section .pop_class, #progression_first_section .pop_class, #quest_first_section .pop_class{
+    background-color: #E2E2E2;
+    border-radius: 0 10px 10px 10px;
+}
+
+#second_section .pop_class, #manage_second_section .pop_class, #progression_second_section .pop_class, #quest_second_section .pop_class{
+    background-color: orange;
+    border-radius: 10px;
+}
+
+.pop_class_img img{
+    width: 50px;
+    margin-right: 10px;
+}
+
+.pop_items_container{
+    margin: 10px 15px 10px 15px;
+}
+
+.pop_item{
+    background-color: #fff;
+    border-radius: 15px;
+    margin: 10px 0;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    max-height: 150px;
+    text-align: center;
+    filter: drop-shadow(0 4px 4px #575757);
+}
+
+.pop_item>* {
+    flex: 1 1 auto;
+}
+
+.pop_item>*:nth-child(1){
+    max-width: 50px;
+}
+
+.pop_item>*:nth-child(2){
+    width: 80%;
+}
+
+.pop_item img{
+    width: 50px;
+    margin-right: 10px;
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));
+}
+
+.pop_item h3{
+    font-size: 18px;
+}
+
+.pop_item p{
+    font-size: 8px;
+}
+
+.pop_item .capacity, .pop_item .multiplicator{
+    width: 172px;
+    height: 13px;
+    border-radius: 3px;
+    margin: 5px 0;
+    padding: 2px 0 0 5px;
+    color: #fff;
+    text-align: start;
+}
+
+.pop_item .capacity{
+    background-color: #29ABE2;
+}
+
+.pop_item .multiplicator{
+    background-color: #9747FF;
+}
+
+.pop_item .buy, .pop_item .equip, .pop_item .equipped{
+    color: #fff;
+    background-color: #FF382B;
+    outline: none;
+    border: none;
+    border-radius: 3px;
+    margin: 9px 10px;
+}
+
+.pop_item .equipped{
+    background-color: #00B912;
+    text-align: center;
+    padding: 1px 0 0 0;
+    font-size: 14px;
+}
+
+.pop_item .locked{
+    position: absolute;
+    width: 100%;
+    transform: translate(-10px, -10px);
+    color: #fff;
+    background-color: #434343;
+    opacity: 0.95;
+    border-radius: 10px;
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    padding: 6.5% 0;
+}
+
+.pop_item .locked img{
+    width: 65px;
+}
+
+#manage .pop_item>*:nth-child(3){
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+#manage .pop_item button.buy{
+    margin: 0 32%;
+    padding: 2px 0;
+}
+
+#manage_first_section .pop_item button.buy{
+    background-color: #00B912;
+}
+
+#manage_second_section .pop_item button.buy{
+    background-color: #9747FF;
+}
+
+#manage_second_section .pop_item button.buy img{
+    width: 15px;
+    right: 0;
+    transform: translate(60%, 20%);
+}
+
+#progression_first_section .pop_item .grade{
+    position: relative;
+    width: 70px;
+    height: 70px;
+}
+
+#progression_first_section .pop_item .succes{
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    top: 6px;
+    left: 10px;
+    z-index: 2;
+}
+
+#progression_first_section .pop_item .laurel{
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    top: 0;
+    left: 0;
+}
+
+#progression_first_section .pop_item button{
+    outline: none;
+    border: none;
+    border-radius: 5px;
+    background: none;
+    color: white;
+    font: bold;
+    margin: 0 30%;
+    padding: 3px 0;
+}
+
+#progression_first_section .pop_item button.incomplete{
+    background-color: #666;
+    opacity: 0.9;
+}
+
+#progression_first_section .pop_item button.complete{
+    background-color: #00B912;
+}
+
+#progression_first_section .pop_item .progression_bar_container{
+    width: 100%;
+    height: 20px;
+    border: 1px solid #17202A;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #17202A;
+}
+
+#progression_first_section .pop_item .progression_bar_container p{
+    position: absolute;
+    text-align: center;
+    transform: translate(50%, 50%);
+}
+
+#progression_first_section .pop_item .item_info p{
+    display: flex;
+    align-items: center;
+}
+
+#progression_first_section .pop_item .item_info p span.money{
+    color: #62AB29;
+}
+
+#progression_first_section .pop_item .item_info p span.gem{
+    color: #1DAFEE;
+}
+
+#progression_first_section .pop_item .item_info p span.coin{
+    color: #AF51DF;
+}
+
+#progression_first_section .pop_item .item_info p img{
+    width: 9px;
+}
+
+#progression_first_section .pop_item .progression_bar{
+    height: 100%;
+    border-radius: 5px;
+    background-color: #78D4FB;
+}
+
+#progression_first_section .pop_item{
+    row-gap: 5px;
+}
+
+#progression_first_section .pop_item>*:nth-child(3){
+    width: 100%;
+}
+
+
+/* Quest page */
+
+/* .quest_bar_container{
+    width: 100%;
+    height: 15px;
+    border: 1px solid #17202A;
+    border-radius: 10px;
+    background-color: #fff;
+    color: #17202A;
+    }
+
+    .quest_bar_container p{
+    position: absolute;
+    text-align: center;
+    transform: translate(15px, 3px);
+    }
+
+    .quest_bar{
+    height: 100%;
+    border-radius: 10px;
+    background-color: #0770FF;
+    }
+
+    .pop_item .recover{
+    position: absolute;
+    width: 92.4%;
+    transform: translate(-10px, -10px);
+    background-color: #434343;
+    opacity: 0.9;
+    border-radius: 15px;
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    padding: 5.5% 0;
+    }
+
+    .pop_item .recover button{
+    outline: none;
+    border: none;
+    background: none;
+    color: #00B912;
+    font-size: large;
+    }
+
+    .pop_item .recover img{
+    width: 65px;
+    }
+
+    .done{
+    position: absolute;
+    width: 92.4%;
+    transform: translate(-10px, -10px);
+    background-color: #434343;
+    opacity: 0.9;
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    padding: 2.5% 0;
+    } */
